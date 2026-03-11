@@ -4,4 +4,4 @@
  * - Native (iOS/Android/macOS/Windows): set to your hosted API URL, e.g. 'https://api.timezonemeet.com'
  * For native builds, replace this file or set window.__API_BASE__ in a build step.
  */
-window.__API_BASE__ = window.__API_BASE__ ?? '';
+window.__API_BASE__ = 'timezonemeet-production.up.railway.app';
