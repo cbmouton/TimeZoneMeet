@@ -1,0 +1,8 @@
+{
+  "appId": "com.timezonemeet.app",
+  "appName": "TimeZoneMeet",
+  "webDir": "public",
+  "server": {
+    "androidScheme": "https"
+  }
+}

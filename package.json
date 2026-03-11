@@ -1,0 +1,25 @@
+{
+  "name": "meeting-time-finder",
+  "version": "1.0.0",
+  "description": "Offline city timezone lookup app using SQLite",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "build-db": "node scripts/build_cities_db.js",
+    "cap:sync": "npx cap sync",
+    "ios": "npx cap open ios",
+    "ios:sync": "npm run cap:sync && npm run ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "better-sqlite3": "^9.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "tz-lookup": "^6.1.25"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  }
+}

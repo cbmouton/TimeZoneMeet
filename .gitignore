@@ -1,0 +1,16 @@
+# Dependencies
+node_modules
+
+# DB built locally (Dockerfile builds it at deploy time)
+db/
+data/
+
+# Env and logs
+.env
+.env.*
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
