@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Premium — TimeZoneMeet</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 3rem auto; padding: 0 1rem; }
+  </style>
+</head>
+<body>
+  <p id="msg">Confirming your purchase…</p>
+  <script src="config.js"></script>
+  <script src="apiBase.js"></script>
+  <script>
+    (async function () {
+      var params = new URLSearchParams(location.search);
+      var sid = params.get("session_id");
+      var msg = document.getElementById("msg");
+      if (!sid) {
+        msg.textContent = "Missing session. Returning home.";
+        setTimeout(function () { location.href = "/"; }, 2000);
+        return;
+      }
+      var base = window.TZM.getApiBase();
+      try {
+        var res = await fetch(base + "/api/verify-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: sid }),
+        });
+        var data = await res.json();
+        if (data.token) {
+          try {
+            localStorage.setItem("tz_premium_token", data.token);
+            sessionStorage.setItem("tz_premium_active", "1");
+          } catch (e) {
+            msg.textContent = "Could not save session.";
+            return;
+          }
+          location.href = "/";
+          return;
+        }
+        msg.textContent = data.error || "Verification failed.";
+      } catch (e) {
+        msg.textContent = "Network error. Try again from the app.";
+      }
+    })();
+  </script>
+</body>
+</html>

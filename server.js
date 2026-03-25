@@ -4,25 +4,56 @@ import Database from "better-sqlite3";
 import tzLookup from "tz-lookup";
 import path from "path";
 import { fileURLToPath } from "url";
+import Stripe from "stripe";
+import { signPremiumToken, verifyPremiumToken } from "./lib/premiumToken.js";
 
-// __dirname replacement for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Database
 const dbPath = path.join(__dirname, "db", "cities.db");
 const db = new Database(dbPath, { readonly: true });
 
-// App
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 8080;
 
-// CORS: required for native apps (iOS/Android/macOS/Windows) and future web on different domain
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+const stripeSecret = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecret ? new Stripe(stripeSecret) : null;
+const PREMIUM_SECRET =
+  process.env.PREMIUM_JWT_SECRET || stripeSecret || "dev-only-change-in-production";
 
-// Helpers
+function premiumFromAuth(req) {
+  const h = req.headers.authorization;
+  if (!h || !h.startsWith("Bearer ")) return false;
+  return verifyPremiumToken(h.slice(7).trim(), PREMIUM_SECRET);
+}
+
+app.use(cors({ origin: true, credentials: true }));
+
+app.post(
+  "/api/stripe-webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!stripe || !whSecret) {
+      return res.status(503).send("Webhook not configured");
+    }
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, req.get("stripe-signature"), whSecret);
+    } catch (err) {
+      console.error("Stripe webhook signature:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    if (event.type === "checkout.session.completed") {
+      console.log("Stripe checkout.session.completed", event.data.object.id);
+    }
+    res.json({ received: true });
+  }
+);
+
+app.use(express.json());
+
 function sanitizeCity(value) {
   if (typeof value !== "string") return "";
   return value.trim();
@@ -35,7 +66,6 @@ function sanitizeCountry(value) {
 }
 
 function lookupCityRow(city, country) {
-  // Exact match first; if not found, prefix match
   if (country) {
     const stmt = db.prepare(`
       SELECT name, country, lat, lon
@@ -61,17 +91,64 @@ function lookupCityRow(city, country) {
   return stmt.get(city, city);
 }
 
-// Health check
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Autocomplete suggestions
-// GET /api/suggest?q=San&limit=10
+app.get("/api/premium-status", (req, res) => {
+  const token =
+    (typeof req.query.token === "string" && req.query.token) ||
+    (req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.slice(7).trim()
+      : "");
+  const ok = token && verifyPremiumToken(token, PREMIUM_SECRET);
+  res.json({ premium: Boolean(ok) });
+});
+
+app.post("/api/create-checkout-session", async (req, res) => {
+  if (!stripe || !process.env.STRIPE_PRICE_ID) {
+    return res.status(503).json({ error: "Premium checkout is not configured" });
+  }
+  const base =
+    process.env.PUBLIC_BASE_URL ||
+    `${req.protocol}://${req.get("host")}`;
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      success_url: `${base.replace(/\/$/, "")}/premium.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base.replace(/\/$/, "")}/`,
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("Stripe checkout:", err.message);
+    res.status(500).json({ error: "Checkout failed" });
+  }
+});
+
+app.post("/api/verify-session", async (req, res) => {
+  const sessionId = req.body?.sessionId;
+  if (!stripe || !sessionId || typeof sessionId !== "string") {
+    return res.status(400).json({ error: "Invalid request" });
+  }
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status !== "paid") {
+      return res.status(400).json({ error: "Payment not completed" });
+    }
+    const token = signPremiumToken(PREMIUM_SECRET);
+    res.json({ token });
+  } catch (err) {
+    console.error("Verify session:", err.message);
+    res.status(400).json({ error: "Could not verify session" });
+  }
+});
+
 app.get("/api/suggest", (req, res) => {
   const q = sanitizeCity(req.query.q);
   const limitRaw = typeof req.query.limit === "string" ? req.query.limit : "10";
-  const limit = Math.min(Math.max(parseInt(limitRaw, 10) || 10, 1), 25);
+  const maxCap = premiumFromAuth(req) ? 50 : 25;
+  const limit = Math.min(Math.max(parseInt(limitRaw, 10) || 10, 1), maxCap);
 
   if (!q) return res.json({ suggestions: [] });
 
@@ -87,13 +164,11 @@ app.get("/api/suggest", (req, res) => {
     const suggestions = stmt.all(q, limit);
     return res.json({ suggestions });
   } catch (err) {
-    console.error("❌ Suggest failed:", err.message);
+    console.error("Suggest failed:", err.message);
     return res.status(500).json({ error: "Suggest failed" });
   }
 });
 
-// GET timezone lookup for easy testing:
-// /api/timezone?city=Paris&country=FR
 app.get("/api/timezone", (req, res) => {
   const city = sanitizeCity(req.query.city);
   const country = sanitizeCountry(req.query.country);
@@ -124,13 +199,11 @@ app.get("/api/timezone", (req, res) => {
       time,
     });
   } catch (err) {
-    console.error("❌ Timezone lookup failed:", err.message);
+    console.error("Timezone lookup failed:", err.message);
     return res.status(500).json({ error: "Timezone lookup failed" });
   }
 });
 
-// POST timezone lookup (what the UI uses)
-// Body: { "city": "Paris", "country": "FR" }
 app.post("/api/timezone", (req, res) => {
   const city = sanitizeCity(req.body?.city);
   const country = sanitizeCountry(req.body?.country);
@@ -161,11 +234,13 @@ app.post("/api/timezone", (req, res) => {
       time,
     });
   } catch (err) {
-    console.error("❌ Timezone lookup failed:", err.message);
+    console.error("Timezone lookup failed:", err.message);
     return res.status(500).json({ error: "Timezone lookup failed" });
   }
 });
 
+app.use(express.static(path.join(__dirname, "public")));
+
 app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });

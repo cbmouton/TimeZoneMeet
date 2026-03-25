@@ -87,6 +87,26 @@ This is your **API base URL**. The app will call:
 - `https://your-service-name.up.railway.app/api/suggest?q=...`
 - `https://your-service-name.up.railway.app/api/timezone` (POST)
 
+The same deployment also serves the **web UI** at that URL (`/`, `privacy.html`, etc.).
+
+---
+
+## Step 5b: Optional — Stripe premium and env vars
+
+In Railway → your service → **Variables**, you can set:
+
+| Variable | Purpose |
+|----------|---------|
+| `PUBLIC_BASE_URL` | Your public `https://…` URL (no trailing slash). Used for Stripe success/cancel redirects. |
+| `STRIPE_SECRET_KEY` | Stripe secret key. |
+| `STRIPE_PRICE_ID` | One-time (or subscription) **Price** ID from Stripe Dashboard. |
+| `PREMIUM_JWT_SECRET` | Long random string used to sign premium tokens (recommended if not using Stripe key as secret). |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret from Stripe → Webhooks (optional). |
+
+**Stripe webhook URL** (optional): `https://your-service-name.up.railway.app/api/stripe-webhook` — add in Stripe Dashboard → Developers → Webhooks.
+
+Without Stripe variables, “Go Premium” returns a clear error; the rest of the app still works.
+
 ---
 
 ## Step 6: Point the iOS app at the API
@@ -97,8 +117,9 @@ In your **local** project (before building the iOS app):
 2. Set the API base to the URL you copied:
 
    ```js
-   window.__API_BASE__ = 'https://your-service-name.up.railway.app';
+   window.__API_BASE__ = "https://your-service-name.up.railway.app";
    ```
+   Include the `https://` scheme (host-only strings are auto-corrected in the web client, but always use a full URL in native builds).
 
 3. Save, then sync and open the iOS project:
 

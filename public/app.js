@@ -25,7 +25,6 @@ function showSuggestions(items) {
 
   suggestList.style.display = "block";
 
-  // Click handlers
   Array.from(suggestList.querySelectorAll(".item")).forEach((el) => {
     el.addEventListener("click", () => {
       const idx = Number(el.getAttribute("data-idx"));
@@ -54,11 +53,20 @@ function escapeHtml(str) {
 
 let suggestTimer = null;
 
-const API_BASE = (typeof window !== 'undefined' && window.__API_BASE__) ? window.__API_BASE__.replace(/\/$/, '') : '';
+function apiBase() {
+  return window.TZM ? window.TZM.getApiBase() : "";
+}
+
+function fetchHeaders(isJson) {
+  const h = { ...window.TZM.authHeaders() };
+  if (isJson) h["Content-Type"] = "application/json";
+  return h;
+}
 
 async function fetchSuggestions(q) {
-  const url = `${API_BASE}/api/suggest?q=${encodeURIComponent(q)}&limit=10`;
-  const res = await fetch(url);
+  const base = apiBase();
+  const url = `${base}/api/suggest?q=${encodeURIComponent(q)}&limit=10`;
+  const res = await fetch(url, { headers: fetchHeaders(false) });
   return await res.json();
 }
 
@@ -69,14 +77,16 @@ async function lookup() {
   resultDiv.textContent = "Loading...";
   metaDiv.textContent = "";
 
-  const payload = selected && selected.name.toLowerCase() === raw.toLowerCase()
-    ? { city: selected.name, country: selected.country }
-    : { city: raw };
+  const payload =
+    selected && selected.name.toLowerCase() === raw.toLowerCase()
+      ? { city: selected.name, country: selected.country }
+      : { city: raw };
 
   try {
-    const response = await fetch(`${API_BASE}/api/timezone`, {
+    const base = apiBase();
+    const response = await fetch(`${base}/api/timezone`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: fetchHeaders(true),
       body: JSON.stringify(payload),
     });
 
@@ -94,9 +104,8 @@ async function lookup() {
   }
 }
 
-// Events
 input.addEventListener("input", () => {
-  selected = null; // user is typing, so clear any prior selection
+  selected = null;
 
   const q = input.value.trim();
   if (!q) {
@@ -143,3 +152,40 @@ clearBtn.addEventListener("click", () => {
   hideSuggestions();
   input.focus();
 });
+
+const goPremiumBtn = document.getElementById("goPremiumBtn");
+if (goPremiumBtn) {
+  goPremiumBtn.addEventListener("click", async () => {
+    const base = apiBase();
+    try {
+      const res = await fetch(`${base}/api/create-checkout-session`, {
+        method: "POST",
+        headers: fetchHeaders(true),
+        body: "{}",
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      alert(data.error || "Premium checkout is not configured on the server.");
+    } catch {
+      alert("Could not start checkout. Try again later.");
+    }
+  });
+}
+
+const premiumSignOutBtn = document.getElementById("premiumSignOutBtn");
+if (premiumSignOutBtn) {
+  premiumSignOutBtn.addEventListener("click", () => {
+    window.TZM.clearPremiumToken();
+    try {
+      sessionStorage.removeItem("tz_premium_active");
+    } catch {
+      /* ignore */
+    }
+    if (typeof window.__applyPremiumUI === "function") {
+      window.__applyPremiumUI();
+    }
+  });
+}

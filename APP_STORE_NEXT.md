@@ -85,8 +85,14 @@ In Xcode:
 
 Your app sends city names to your API and shows time/timezone. In App Store Connect:
 
-- **Privacy Policy URL**: Required; host a page that says you only use the entered city to look up time and don’t store or sell it (if that’s true).
-- **App Privacy**: In the app’s **App Privacy** section, declare what data you collect. If you only send the city to your server for the lookup and don’t track users, you can indicate minimal or no data collection; be accurate.
+- **Privacy Policy URL**: Required. This repo ships [public/privacy.html](public/privacy.html); on your deployed site use `https://<your-domain>/privacy.html` as the URL after you deploy.
+- **App Privacy**: Declare what you collect (city search text sent to your API). If you add **Google AdSense** on web only, note that; for the **native iOS** build, either disable AdSense in `config.js` for the Capacitor bundle or declare advertising data per Apple’s questionnaire.
+- **Premium / Stripe**: If users can purchase premium on the **website**, describe payment processing (Stripe) in the privacy policy; in-app purchases on iOS would use Apple’s IAP flow separately.
+
+## 8. Ads (web vs iOS)
+
+- **AdSense** targets the **web** app. WKWebView / Capacitor behavior and Google policies differ; many apps use **AdMob** for iOS instead.
+- For App Store review, ensure metadata matches what the app does (ads or no ads in the native build).
 
 ---
 

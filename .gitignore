@@ -8,6 +8,7 @@ data/
 # Env and logs
 .env
 .env.*
+!.env.example
 *.log
 npm-debug.log*
 

@@ -37,7 +37,16 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
 
 ## Config
 
-- **public/config.js**: Sets `window.__API_BASE__`. Empty = same-origin (web). For native builds, set to your hosted API URL (e.g. `https://api.timezonemeet.com`).
+- **public/config.js**:
+  - `window.__API_BASE__` — Empty string = same origin (when this server serves the UI). For Capacitor/native, set the full HTTPS API URL (scheme required; host-only values are normalized to `https://` in [public/apiBase.js](public/apiBase.js)).
+  - `window.__ADSENSE_CLIENT__` / `window.__ADSENSE_SLOT__` — After [Google AdSense](https://www.google.com/adsense/) approves your domain, set your publisher ID and ad unit slot. Leave empty until then; a placeholder shows in the ad area.
+- **Environment variables** (production / Railway): see [.env.example](.env.example) for optional **Stripe** premium (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `PUBLIC_BASE_URL`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_JWT_SECRET`).
+
+## Web: ads and premium
+
+- **Privacy**: [public/privacy.html](public/privacy.html) — link from the footer; required for AdSense and App Store privacy disclosures.
+- **Premium**: “Go Premium” calls `POST /api/create-checkout-session` (Stripe Checkout). After payment, `/premium.html` verifies the session and stores a signed token locally. Premium hides ads and raises the suggestion limit cap (server-side via `Authorization: Bearer` token).
+- **AdSense** is intended for the **web** app in a normal browser. In **Capacitor/iOS**, AdSense may not behave like on the web; consider omitting client/slot in native builds or using AdMob later.
 
 ---
 
@@ -49,8 +58,12 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
 | `/api/suggest` | GET | Query params: `q` (search string), `limit` (1–25, default 10). Returns `{ "suggestions": [ { "name", "country" }, ... ] }`. |
 | `/api/timezone` | GET | Query params: `city`, optional `country`. Returns `{ "city", "country", "timezone", "time" }` or 400/404. |
 | `/api/timezone` | POST | Body: `{ "city", "country" }` (country optional). Same response as GET. Used by the UI. |
+| `/api/premium-status` | GET | Query `token` or `Authorization: Bearer`. Returns `{ "premium": true/false }`. |
+| `/api/create-checkout-session` | POST | Stripe Checkout (requires env). Returns `{ "url" }` or `{ "error" }`. |
+| `/api/verify-session` | POST | Body `{ "sessionId" }` (Stripe Checkout session). Returns `{ "token" }` for premium JWT. |
+| `/api/stripe-webhook` | POST | Raw JSON body; Stripe webhook endpoint (optional). |
 
-All responses are JSON. CORS is enabled for native and cross-origin web clients.
+Bearer token on `/api/suggest` raises max suggestion limit to 50 (vs 25). CORS is enabled for native and cross-origin web clients.
 
 ---
 
