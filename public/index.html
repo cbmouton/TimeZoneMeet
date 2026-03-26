@@ -51,6 +51,7 @@
       cursor: pointer;
     }
     .muted { color: #666; font-size: 0.95rem; margin-top: 0.5rem; }
+    .intro { margin-top: 0.35rem; line-height: 1.45; color: #333; }
     .ad-slot {
       margin: 1rem 0;
       min-height: 90px;
@@ -72,19 +73,12 @@
   <div class="wrap">
     <h1>Find City Timezone</h1>
 
-    <div class="ad-slot" aria-label="Advertisement">
-      <ins
-        class="adsbygoogle"
-        style="display:block"
-        data-ad-client=""
-        data-ad-slot=""
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      ></ins>
-      <div class="ad-placeholder" id="adPlaceholder">
-        Ad space (configure <code>__ADSENSE_CLIENT__</code> and <code>__ADSENSE_SLOT__</code> in config.js after AdSense approval)
-      </div>
-    </div>
+    <p class="intro">
+      Enter a city (and optionally a country) to instantly see the current local time and time zone.
+    </p>
+    <p class="hint">
+      No account needed. Your input is used only to perform the lookup on our servers.
+    </p>
 
     <p class="premium-bar">
       <button type="button" id="goPremiumBtn">Go Premium</button>
@@ -100,8 +94,21 @@
       <button type="button" id="lookupBtn">Lookup</button>
       <button type="button" id="clearBtn">Clear</button>
     </div>
-    <div id="result" class="muted"></div>
-    <div id="meta" class="muted"></div>
+
+    <div class="ad-slot" aria-label="Advertisement">
+      <ins
+        class="adsbygoogle"
+        style="display:block"
+        data-ad-client=""
+        data-ad-slot=""
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      ></ins>
+      <div class="ad-placeholder" id="adPlaceholder">Sponsored</div>
+    </div>
+
+    <div id="result" class="muted">Enter a city and press Lookup.</div>
+    <div id="meta" class="muted">Example: Paris, FR</div>
 
     <footer class="site-footer">
       <a href="privacy.html">Privacy Policy</a>
