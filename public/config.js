@@ -21,3 +21,18 @@ window.__ADSENSE_CLIENT__ = "ca-pub-6736669949964710";
  * Ad unit slot id from AdSense (required with client to show a display unit).
  */
 window.__ADSENSE_SLOT__ = "";
+
+/**
+ * AdMob (iOS native via Capacitor plugin).
+ * Defaults to Google's test ids in ios mode.
+ */
+window.__ADMOB_ENABLED__ = false;
+window.__ADMOB_IOS_APP_ID__ = "";
+window.__ADMOB_BANNER_ID__ = "";
+window.__ADMOB_TEST_MODE__ = false;
+
+/**
+ * Apple In‑App Purchase (iOS native via cordova-plugin-purchase).
+ */
+window.__IAP_ENABLED__ = false;
+window.__IAP_PRODUCT_ID__ = "";

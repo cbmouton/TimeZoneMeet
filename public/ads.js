@@ -1,4 +1,59 @@
 (function () {
+  function isNativeIOS() {
+    const c = window.Capacitor;
+    return Boolean(c && typeof c.getPlatform === "function" && c.getPlatform() === "ios");
+  }
+
+  function getAdMobPlugin() {
+    const c = window.Capacitor;
+    return c && c.Plugins ? c.Plugins.AdMob : null;
+  }
+
+  async function hideAdMobBanner() {
+    const plugin = getAdMobPlugin();
+    if (!plugin || typeof plugin.hideBanner !== "function") return;
+    try {
+      await plugin.hideBanner();
+    } catch (e) {
+      console.warn("AdMob hideBanner failed", e);
+    }
+  }
+
+  async function initAdMobBanner() {
+    if (!isNativeIOS()) return;
+    if (!window.__ADMOB_ENABLED__) return;
+    if (isPremium()) return;
+    if (window.__admobShown) return;
+
+    const plugin = getAdMobPlugin();
+    if (!plugin) {
+      console.warn("AdMob plugin not available");
+      return;
+    }
+
+    const testMode = Boolean(window.__ADMOB_TEST_MODE__);
+    const bannerId =
+      window.__ADMOB_BANNER_ID__ || "ca-app-pub-3940256099942544/2435281174";
+
+    try {
+      if (typeof plugin.initialize === "function") {
+        await plugin.initialize({ initializeForTesting: testMode });
+      }
+      if (typeof plugin.showBanner === "function") {
+        await plugin.showBanner({
+          adId: bannerId,
+          adSize: "BANNER",
+          position: "BOTTOM_CENTER",
+          margin: 0,
+          isTesting: testMode,
+        });
+      }
+      window.__admobShown = true;
+    } catch (e) {
+      console.warn("AdMob banner failed", e);
+    }
+  }
+
   function isPremium() {
     try {
       return sessionStorage.getItem("tz_premium_active") === "1";
@@ -27,15 +82,28 @@
 
     if (premium) {
       hideAdSlots();
+      if (isNativeIOS()) hideAdMobBanner();
       if (goPremium) goPremium.style.display = "none";
       if (manage) manage.style.display = "inline";
-      if (signOut) signOut.style.display = "inline";
+      if (signOut) signOut.style.display = isNativeIOS() ? "none" : "inline";
     } else {
-      showAdSlots();
+      if (isNativeIOS()) {
+        hideAdSlots();
+        initAdMobBanner();
+      } else {
+        showAdSlots();
+      }
       if (goPremium) goPremium.style.display = "inline";
       if (manage) manage.style.display = "none";
-      if (signOut) signOut.style.display = "none";
-      initAdsense();
+      if (signOut) {
+        if (isNativeIOS() && window.__IAP_ENABLED__) {
+          signOut.textContent = "Restore Purchases";
+          signOut.style.display = "inline";
+        } else {
+          signOut.style.display = "none";
+        }
+      }
+      if (!isNativeIOS()) initAdsense();
     }
   };
 

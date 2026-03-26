@@ -41,13 +41,18 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
   - Generate it by mode (best practice): `npm run config:web` for web, `API_BASE=https://your-app.up.railway.app npm run config:ios` for iOS.
   - `window.__API_BASE__` — Empty string = same origin (when this server serves the UI). For Capacitor/native, use full HTTPS URL (scheme required; host-only strings are normalized to `https://` in [public/apiBase.js](public/apiBase.js)).
   - `window.__ADSENSE_CLIENT__` / `window.__ADSENSE_SLOT__` — Generated in web mode only (empty in iOS mode).
+  - `window.__ADMOB_*` — Generated in iOS mode only (test IDs by default). Set `IOS_ADMOB_APP_ID`, `IOS_ADMOB_BANNER_ID`, and optionally `IOS_ADMOB_TEST_MODE=0` for production.
+  - `window.__IAP_*` — Generated in iOS mode only (Apple IAP). Set `IOS_IAP_PRODUCT_ID` to your App Store Connect product id (e.g. `com.timezonemeet.app.premium`).
 - **Environment variables** (production / Railway): see [.env.example](.env.example) for optional **Stripe** premium (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `PUBLIC_BASE_URL`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_JWT_SECRET`).
 
 ## Web: ads and premium
 
 - **Privacy**: [public/privacy.html](public/privacy.html) — link from the footer; required for AdSense and App Store privacy disclosures.
 - **Premium**: “Go Premium” calls `POST /api/stripe-session` (Stripe Checkout). After payment, `/premium.html` verifies the session and stores a signed token locally. Premium hides ads and raises the suggestion limit cap (server-side via `Authorization: Bearer` token). The legacy path `POST /api/create-checkout-session` is still registered but may be blocked by some CDNs.
-- **AdSense** is intended for the **web** app in a normal browser. In **Capacitor/iOS**, AdSense may not behave like on the web; consider omitting client/slot in native builds or using AdMob later.
+- **AdSense** is used on the **web** app.
+- **AdMob** is used on **iOS (Capacitor)** via `@capacitor-community/admob`.
+- **Apple IAP (Premium)** on iOS uses `cordova-plugin-purchase`. Use “Restore Purchases” to re-enable Premium on new devices.
+- iOS currently ships with Google test App/Banner IDs; replace with your real AdMob IDs before release and set `IOS_ADMOB_TEST_MODE=0` when generating iOS config.
 - **Suggested workflow**: use `npm run config:web` before web deploys; use `API_BASE=https://your-app.up.railway.app npm run ios:prepare` before iOS builds.
 
 ---

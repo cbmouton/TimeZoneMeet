@@ -156,6 +156,19 @@ clearBtn.addEventListener("click", () => {
 const goPremiumBtn = document.getElementById("goPremiumBtn");
 if (goPremiumBtn) {
   goPremiumBtn.addEventListener("click", async () => {
+    const c = window.Capacitor;
+    const isIOS = Boolean(c && typeof c.getPlatform === "function" && c.getPlatform() === "ios");
+    if (isIOS && window.TZM?.iap?.enabled?.()) {
+      try {
+        await window.TZM.iap.purchase();
+      } catch {
+        alert(
+          "Could not start Apple purchase flow. Make sure you set a StoreKit Configuration file in the scheme (for Simulator), or create the product in App Store Connect."
+        );
+      }
+      return;
+    }
+
     const base = apiBase();
     const url = `${base}/api/stripe-session`;
     try {
@@ -191,6 +204,17 @@ if (goPremiumBtn) {
 const premiumSignOutBtn = document.getElementById("premiumSignOutBtn");
 if (premiumSignOutBtn) {
   premiumSignOutBtn.addEventListener("click", () => {
+    const c = window.Capacitor;
+    const isIOS = Boolean(c && typeof c.getPlatform === "function" && c.getPlatform() === "ios");
+    if (isIOS && window.TZM?.iap?.enabled?.()) {
+      try {
+        window.TZM.iap.restore();
+        alert("Restoring purchases… If you previously bought Premium, it will re-enable shortly.");
+      } catch {
+        alert("Restore purchases failed.");
+      }
+      return;
+    }
     window.TZM.clearPremiumToken();
     try {
       sessionStorage.removeItem("tz_premium_active");
