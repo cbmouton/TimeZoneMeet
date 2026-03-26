@@ -45,7 +45,7 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
 ## Web: ads and premium
 
 - **Privacy**: [public/privacy.html](public/privacy.html) — link from the footer; required for AdSense and App Store privacy disclosures.
-- **Premium**: “Go Premium” calls `POST /api/create-checkout-session` (Stripe Checkout). After payment, `/premium.html` verifies the session and stores a signed token locally. Premium hides ads and raises the suggestion limit cap (server-side via `Authorization: Bearer` token).
+- **Premium**: “Go Premium” calls `POST /api/stripe-session` (Stripe Checkout). After payment, `/premium.html` verifies the session and stores a signed token locally. Premium hides ads and raises the suggestion limit cap (server-side via `Authorization: Bearer` token). The legacy path `POST /api/create-checkout-session` is still registered but may be blocked by some CDNs.
 - **AdSense** is intended for the **web** app in a normal browser. In **Capacitor/iOS**, AdSense may not behave like on the web; consider omitting client/slot in native builds or using AdMob later.
 
 ---
@@ -59,7 +59,7 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
 | `/api/timezone` | GET | Query params: `city`, optional `country`. Returns `{ "city", "country", "timezone", "time" }` or 400/404. |
 | `/api/timezone` | POST | Body: `{ "city", "country" }` (country optional). Same response as GET. Used by the UI. |
 | `/api/premium-status` | GET | Query `token` or `Authorization: Bearer`. Returns `{ "premium": true/false }`. |
-| `/api/create-checkout-session` | POST | Stripe Checkout (requires env). Returns `{ "url" }` or `{ "error" }`. |
+| `/api/stripe-session` | POST | Stripe Checkout (requires env). Returns `{ "url" }` or `{ "error" }`. |
 | `/api/verify-session` | POST | Body `{ "sessionId" }` (Stripe Checkout session). Returns `{ "token" }` for premium JWT. |
 | `/api/stripe-webhook` | POST | Raw JSON body; Stripe webhook endpoint (optional). |
 

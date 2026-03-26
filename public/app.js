@@ -157,7 +157,7 @@ const goPremiumBtn = document.getElementById("goPremiumBtn");
 if (goPremiumBtn) {
   goPremiumBtn.addEventListener("click", async () => {
     const base = apiBase();
-    const url = `${base}/api/create-checkout-session`;
+    const url = `${base}/api/stripe-session`;
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -170,7 +170,7 @@ if (goPremiumBtn) {
         data = JSON.parse(raw);
       } catch {
         alert(
-          `Checkout failed (HTTP ${res.status}). The server did not return JSON — often a bad deploy, wrong URL, or Railway error page. Open Railway logs and confirm STRIPE_SECRET_KEY and STRIPE_PRICE_ID are set.`
+          `Checkout failed (HTTP ${res.status}). The server did not return JSON — wrong API URL, a bad deploy, or an edge/proxy error page. Check GET /health (checkout.ready) and Railway logs.`
         );
         return;
       }

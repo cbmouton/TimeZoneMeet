@@ -125,7 +125,7 @@ app.get("/api/premium-status", (req, res) => {
   res.json({ premium: Boolean(ok) });
 });
 
-app.post("/api/create-checkout-session", async (req, res) => {
+async function postStripeCheckoutSession(req, res) {
   if (!stripe || !stripePriceId) {
     return res.status(503).json({
       error: "Premium checkout is not configured",
@@ -148,7 +148,12 @@ app.post("/api/create-checkout-session", async (req, res) => {
       err && typeof err.message === "string" ? err.message : "unknown error";
     res.status(500).json({ error: "Checkout failed", detail });
   }
-});
+}
+
+// Primary path for clients. Some hosts (e.g. Railway + edge) return a non-JSON 503 for
+// POST /api/create-checkout-session — that string matches common WAF/tutorial patterns.
+app.post("/api/stripe-session", postStripeCheckoutSession);
+app.post("/api/create-checkout-session", postStripeCheckoutSession);
 
 app.post("/api/verify-session", async (req, res) => {
   const sessionId = req.body?.sessionId;
