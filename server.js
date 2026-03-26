@@ -20,6 +20,11 @@ const PORT = process.env.PORT || 8080;
 const stripeSecret = (process.env.STRIPE_SECRET_KEY || "").trim();
 const stripePriceId = (process.env.STRIPE_PRICE_ID || "").trim();
 
+/** Stripe Checkout line_items[].price must be a Price object id (price_…), not an amount. */
+function isStripePriceId(value) {
+  return typeof value === "string" && /^price_[a-zA-Z0-9]+$/.test(value);
+}
+
 let stripe = null;
 if (stripeSecret) {
   try {
@@ -110,7 +115,8 @@ app.get("/health", (_req, res) => {
       stripeKeySet: Boolean(stripeSecret),
       stripeClientOk: Boolean(stripe),
       priceIdSet: Boolean(stripePriceId),
-      ready: Boolean(stripe && stripePriceId),
+      priceIdFormatOk: isStripePriceId(stripePriceId),
+      ready: Boolean(stripe && isStripePriceId(stripePriceId)),
     },
   });
 });
@@ -130,6 +136,13 @@ async function postStripeCheckoutSession(req, res) {
     return res.status(503).json({
       error: "Premium checkout is not configured",
       hint: "Set STRIPE_SECRET_KEY and STRIPE_PRICE_ID on Railway (no quotes or spaces). See GET /health for checkout.* flags.",
+    });
+  }
+  if (!isStripePriceId(stripePriceId)) {
+    return res.status(503).json({
+      error: "STRIPE_PRICE_ID must be a Stripe Price ID, not a dollar amount",
+      detail:
+        "In Stripe Dashboard: Products → your product → copy the Price ID (starts with price_). See https://docs.stripe.com/products-prices/manage-prices",
     });
   }
   const base = (process.env.PUBLIC_BASE_URL || "").trim().replace(/\/$/, "") ||

@@ -47,11 +47,22 @@
     if (!client || !slot) return;
 
     window.__adsenseLoaded = true;
-    const s = document.createElement("script");
-    s.async = true;
-    s.src =
+    const expectedSrc =
       "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" +
       encodeURIComponent(client);
+    const already = Array.from(document.scripts).some((el) => el.src === expectedSrc);
+    if (already) {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (e) {
+        console.warn("AdSense push failed", e);
+      }
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.async = true;
+    s.src = expectedSrc;
     s.crossOrigin = "anonymous";
     s.onload = function () {
       try {

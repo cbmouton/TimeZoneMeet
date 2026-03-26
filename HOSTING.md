@@ -99,7 +99,7 @@ In Railway → your service → **Variables**, you can set:
 |----------|---------|
 | `PUBLIC_BASE_URL` | Your public `https://…` URL (no trailing slash). Used for Stripe success/cancel redirects. |
 | `STRIPE_SECRET_KEY` | Stripe secret key. |
-| `STRIPE_PRICE_ID` | One-time (or subscription) **Price** ID from Stripe Dashboard. |
+| `STRIPE_PRICE_ID` | **Price ID** from Stripe (starts with `price_`), under Products → your product → Pricing. Not a dollar amount (e.g. not `9.99` or `999`). |
 | `PREMIUM_JWT_SECRET` | Long random string used to sign premium tokens (recommended if not using Stripe key as secret). |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret from Stripe → Webhooks (optional). |
 

@@ -10,7 +10,7 @@ window.__API_BASE__ = "";
  * Google AdSense (web only). Leave empty until AdSense approves your site.
  * Example client: ca-pub-xxxxxxxxxxxxxxxx
  */
-window.__ADSENSE_CLIENT__ = "";
+window.__ADSENSE_CLIENT__ = "ca-pub-6736669949964710";
 
 /**
  * Ad unit slot id from AdSense (required with client to show a display unit).
