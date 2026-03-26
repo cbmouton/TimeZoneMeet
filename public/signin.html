@@ -56,7 +56,10 @@
             msg.textContent = data.error || "Could not send link.";
           } else {
             msg.className = "ok";
-            msg.textContent = "Check your email for the sign-in link.";
+            msg.innerHTML =
+              "Check your email for the sign-in link.<br/>" +
+              "<span class=\"muted\">Didn’t get it? Check Spam/Junk (and Promotions), then search for ‘TimeZoneMeet sign-in link’.</span><br/>" +
+              "<span class=\"muted\">It expires in 20 minutes.</span>";
           }
         } catch (e2) {
           msg.className = "err";
