@@ -157,20 +157,33 @@ const goPremiumBtn = document.getElementById("goPremiumBtn");
 if (goPremiumBtn) {
   goPremiumBtn.addEventListener("click", async () => {
     const base = apiBase();
+    const url = `${base}/api/create-checkout-session`;
     try {
-      const res = await fetch(`${base}/api/create-checkout-session`, {
+      const res = await fetch(url, {
         method: "POST",
         headers: fetchHeaders(true),
         body: "{}",
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        alert(
+          `Checkout failed (HTTP ${res.status}). The server did not return JSON — often a bad deploy, wrong URL, or Railway error page. Open Railway logs and confirm STRIPE_SECRET_KEY and STRIPE_PRICE_ID are set.`
+        );
+        return;
+      }
       if (data.url) {
         window.location.href = data.url;
         return;
       }
-      alert(data.error || "Premium checkout is not configured on the server.");
-    } catch {
-      alert("Could not start checkout. Try again later.");
+      const msg = [data.error, data.detail].filter(Boolean).join(" — ");
+      alert(msg || "Premium checkout is not configured on the server.");
+    } catch (e) {
+      alert(
+        `Network error calling ${url}. If the site is on Railway, check that __API_BASE__ in config.js is "" (same host) or your full https:// URL.`
+      );
     }
   });
 }

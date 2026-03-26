@@ -122,7 +122,9 @@ app.post("/api/create-checkout-session", async (req, res) => {
     res.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout:", err.message);
-    res.status(500).json({ error: "Checkout failed" });
+    const detail =
+      err && typeof err.message === "string" ? err.message : "unknown error";
+    res.status(500).json({ error: "Checkout failed", detail });
   }
 });
 
