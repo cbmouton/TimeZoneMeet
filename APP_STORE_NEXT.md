@@ -11,9 +11,10 @@ The iOS app needs a public API URL. If you haven’t already:
 1. Push **meeting-time-finder** to GitHub (see [HOSTING.md](HOSTING.md) Step 1).
 2. Deploy on **Railway** (or Fly.io/Render): connect repo → use Dockerfile → generate domain.
 3. Copy the HTTPS URL (e.g. `https://your-app.up.railway.app`).
-4. In **meeting-time-finder/public/config.js** set:
-   ```js
-   window.__API_BASE__ = 'https://your-app.up.railway.app';
+4. Generate iOS config (instead of hand-editing `public/config.js`):
+   ```bash
+   cd /Users/cedricbrown/dev/TimeZoneMeet/meeting-time-finder
+   API_BASE=https://your-app.up.railway.app npm run config:ios
    ```
 5. Confirm: open `https://your-app.up.railway.app/health` in a browser → should show `{"status":"ok"}`.
 
@@ -37,8 +38,7 @@ The iOS app needs a public API URL. If you haven’t already:
 
 ```bash
 cd /Users/cedricbrown/dev/TimeZoneMeet/meeting-time-finder
-npm run cap:sync
-npm run ios
+API_BASE=https://your-app.up.railway.app npm run ios:prepare
 ```
 
 In **Xcode**:

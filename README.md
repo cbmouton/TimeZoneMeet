@@ -38,8 +38,9 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
 ## Config
 
 - **public/config.js**:
-  - `window.__API_BASE__` — Empty string = same origin (when this server serves the UI). For Capacitor/native, set the full HTTPS API URL (scheme required; host-only values are normalized to `https://` in [public/apiBase.js](public/apiBase.js)).
-  - `window.__ADSENSE_CLIENT__` / `window.__ADSENSE_SLOT__` — After [Google AdSense](https://www.google.com/adsense/) approves your domain, set your publisher ID and ad unit slot. Leave empty until then; a placeholder shows in the ad area.
+  - Generate it by mode (best practice): `npm run config:web` for web, `API_BASE=https://your-app.up.railway.app npm run config:ios` for iOS.
+  - `window.__API_BASE__` — Empty string = same origin (when this server serves the UI). For Capacitor/native, use full HTTPS URL (scheme required; host-only strings are normalized to `https://` in [public/apiBase.js](public/apiBase.js)).
+  - `window.__ADSENSE_CLIENT__` / `window.__ADSENSE_SLOT__` — Generated in web mode only (empty in iOS mode).
 - **Environment variables** (production / Railway): see [.env.example](.env.example) for optional **Stripe** premium (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `PUBLIC_BASE_URL`, `STRIPE_WEBHOOK_SECRET`, `PREMIUM_JWT_SECRET`).
 
 ## Web: ads and premium
@@ -47,6 +48,7 @@ See **[../PLATFORMS.md](../PLATFORMS.md)** for:
 - **Privacy**: [public/privacy.html](public/privacy.html) — link from the footer; required for AdSense and App Store privacy disclosures.
 - **Premium**: “Go Premium” calls `POST /api/stripe-session` (Stripe Checkout). After payment, `/premium.html` verifies the session and stores a signed token locally. Premium hides ads and raises the suggestion limit cap (server-side via `Authorization: Bearer` token). The legacy path `POST /api/create-checkout-session` is still registered but may be blocked by some CDNs.
 - **AdSense** is intended for the **web** app in a normal browser. In **Capacitor/iOS**, AdSense may not behave like on the web; consider omitting client/slot in native builds or using AdMob later.
+- **Suggested workflow**: use `npm run config:web` before web deploys; use `API_BASE=https://your-app.up.railway.app npm run ios:prepare` before iOS builds.
 
 ---
 

@@ -7,9 +7,13 @@
   "scripts": {
     "start": "node server.js",
     "build-db": "node scripts/build_cities_db.js",
+    "config:web": "node scripts/write_config.js web",
+    "config:ios": "node scripts/write_config.js ios",
     "cap:sync": "npx cap sync",
+    "cap:sync:ios": "npm run config:ios && npx cap sync",
     "ios": "npx cap open ios",
-    "ios:sync": "npm run cap:sync && npm run ios"
+    "ios:sync": "npm run cap:sync && npm run ios",
+    "ios:prepare": "npm run cap:sync:ios && npm run ios"
   },
   "dependencies": {
     "@capacitor/core": "^6.1.2",
