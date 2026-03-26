@@ -17,10 +17,22 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 8080;
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-const stripe = stripeSecret ? new Stripe(stripeSecret) : null;
+const stripeSecret = (process.env.STRIPE_SECRET_KEY || "").trim();
+const stripePriceId = (process.env.STRIPE_PRICE_ID || "").trim();
+
+let stripe = null;
+if (stripeSecret) {
+  try {
+    stripe = new Stripe(stripeSecret);
+  } catch (e) {
+    console.error("Stripe init failed (check STRIPE_SECRET_KEY):", e.message);
+  }
+}
+
 const PREMIUM_SECRET =
-  process.env.PREMIUM_JWT_SECRET || stripeSecret || "dev-only-change-in-production";
+  (process.env.PREMIUM_JWT_SECRET || "").trim() ||
+  stripeSecret ||
+  "dev-only-change-in-production";
 
 function premiumFromAuth(req) {
   const h = req.headers.authorization;
@@ -34,7 +46,7 @@ app.post(
   "/api/stripe-webhook",
   express.raw({ type: "application/json" }),
   async (req, res) => {
-    const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const whSecret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
     if (!stripe || !whSecret) {
       return res.status(503).send("Webhook not configured");
     }
@@ -92,7 +104,15 @@ function lookupCityRow(city, country) {
 }
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    status: "ok",
+    checkout: {
+      stripeKeySet: Boolean(stripeSecret),
+      stripeClientOk: Boolean(stripe),
+      priceIdSet: Boolean(stripePriceId),
+      ready: Boolean(stripe && stripePriceId),
+    },
+  });
 });
 
 app.get("/api/premium-status", (req, res) => {
@@ -106,16 +126,18 @@ app.get("/api/premium-status", (req, res) => {
 });
 
 app.post("/api/create-checkout-session", async (req, res) => {
-  if (!stripe || !process.env.STRIPE_PRICE_ID) {
-    return res.status(503).json({ error: "Premium checkout is not configured" });
+  if (!stripe || !stripePriceId) {
+    return res.status(503).json({
+      error: "Premium checkout is not configured",
+      hint: "Set STRIPE_SECRET_KEY and STRIPE_PRICE_ID on Railway (no quotes or spaces). See GET /health for checkout.* flags.",
+    });
   }
-  const base =
-    process.env.PUBLIC_BASE_URL ||
+  const base = (process.env.PUBLIC_BASE_URL || "").trim().replace(/\/$/, "") ||
     `${req.protocol}://${req.get("host")}`;
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: stripePriceId, quantity: 1 }],
       success_url: `${base.replace(/\/$/, "")}/premium.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base.replace(/\/$/, "")}/`,
     });
