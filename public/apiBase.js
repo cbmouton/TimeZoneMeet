@@ -3,6 +3,7 @@
  */
 (function () {
   const TOKEN_KEY = "tz_premium_token";
+  const DEVICE_KEY = "tz_device_id";
 
   function getApiBase() {
     let b =
@@ -13,6 +14,22 @@
       b = "https://" + b;
     }
     return b;
+  }
+
+  function getOrCreateDeviceId() {
+    try {
+      const existing = localStorage.getItem(DEVICE_KEY);
+      if (existing && typeof existing === "string" && existing.length >= 16) return existing;
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      const id = Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      localStorage.setItem(DEVICE_KEY, id);
+      return id;
+    } catch {
+      return "";
+    }
   }
 
   function getPremiumToken() {
@@ -40,6 +57,7 @@
 
   window.TZM = {
     getApiBase,
+    getOrCreateDeviceId,
     getPremiumToken,
     authHeaders,
     clearPremiumToken,

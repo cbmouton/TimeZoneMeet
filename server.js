@@ -6,12 +6,15 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Stripe from "stripe";
 import { signPremiumToken, verifyPremiumToken } from "./lib/premiumToken.js";
+import { openAuthDb } from "./lib/authDb.js";
+import { isValidEmail, normalizeEmail, randomToken, sha256Base64Url } from "./lib/authTokens.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const dbPath = path.join(__dirname, "db", "cities.db");
 const db = new Database(dbPath, { readonly: true });
+const authDb = openAuthDb();
 
 const app = express();
 app.set("trust proxy", 1);
@@ -19,6 +22,10 @@ const PORT = process.env.PORT || 8080;
 
 const stripeSecret = (process.env.STRIPE_SECRET_KEY || "").trim();
 const stripePriceId = (process.env.STRIPE_PRICE_ID || "").trim();
+
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const AUTH_FROM_EMAIL = (process.env.AUTH_FROM_EMAIL || "").trim();
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
 
 /** Stripe Checkout line_items[].price must be a Price object id (price_…), not an amount. */
 function isStripePriceId(value) {
@@ -70,6 +77,187 @@ app.post(
 );
 
 app.use(express.json());
+
+function getClientIp(req) {
+  const xff = req.headers["x-forwarded-for"];
+  if (typeof xff === "string" && xff.trim()) return xff.split(",")[0].trim();
+  return req.socket?.remoteAddress || "";
+}
+
+async function sendMagicLinkEmail({ to, link }) {
+  if (!RESEND_API_KEY || !AUTH_FROM_EMAIL) {
+    throw new Error("Resend is not configured (set RESEND_API_KEY and AUTH_FROM_EMAIL)");
+  }
+  if (!PUBLIC_BASE_URL) {
+    throw new Error("PUBLIC_BASE_URL is required for magic links");
+  }
+
+  const html = `
+    <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; line-height: 1.5;">
+      <h2 style="margin: 0 0 12px;">Sign in to TimeZoneMeet</h2>
+      <p style="margin: 0 0 12px;">Click this link to sign in. It expires in 20 minutes.</p>
+      <p style="margin: 0 0 16px;"><a href="${link}">${link}</a></p>
+      <p style="margin: 0; color: #666; font-size: 12px;">If you didn’t request this, you can ignore this email.</p>
+    </div>
+  `;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: AUTH_FROM_EMAIL,
+      to,
+      subject: "Your TimeZoneMeet sign-in link",
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Resend send failed: ${res.status} ${text}`.trim());
+  }
+}
+
+function getOrCreateUserByEmail(email) {
+  const now = Date.now();
+  const existing = authDb.prepare("SELECT id, email, premium FROM users WHERE email = ?").get(email);
+  if (existing) return existing;
+  const info = authDb
+    .prepare("INSERT INTO users (email, premium, created_at) VALUES (?, 0, ?)")
+    .run(email, now);
+  return { id: Number(info.lastInsertRowid), email, premium: 0 };
+}
+
+function setUserPremiumByEmail(email, premium) {
+  authDb.prepare("UPDATE users SET premium = ? WHERE email = ?").run(premium ? 1 : 0, email);
+}
+
+function upsertDevice(userId, deviceIdHash) {
+  const now = Date.now();
+  const row = authDb
+    .prepare(
+      "SELECT id, revoked_at FROM devices WHERE user_id = ? AND device_id_hash = ?"
+    )
+    .get(userId, deviceIdHash);
+  if (row) {
+    authDb
+      .prepare("UPDATE devices SET last_seen_at = ?, revoked_at = NULL WHERE id = ?")
+      .run(now, row.id);
+    return;
+  }
+  authDb
+    .prepare(
+      "INSERT INTO devices (user_id, device_id_hash, created_at, last_seen_at, revoked_at) VALUES (?, ?, ?, ?, NULL)"
+    )
+    .run(userId, deviceIdHash, now, now);
+}
+
+function countActiveDevices(userId) {
+  const row = authDb
+    .prepare("SELECT COUNT(1) AS c FROM devices WHERE user_id = ? AND revoked_at IS NULL")
+    .get(userId);
+  return Number(row?.c || 0);
+}
+
+function enforceMaxDevicesOrThrow(userId, deviceIdHash, maxDevices = 2) {
+  const existing = authDb
+    .prepare(
+      "SELECT id FROM devices WHERE user_id = ? AND device_id_hash = ? AND revoked_at IS NULL"
+    )
+    .get(userId, deviceIdHash);
+  if (existing) return;
+  const active = countActiveDevices(userId);
+  if (active >= maxDevices) {
+    const err = new Error("Device limit reached");
+    err.code = "DEVICE_LIMIT";
+    err.status = 403;
+    throw err;
+  }
+}
+
+app.post("/api/auth/start", async (req, res) => {
+  const emailRaw = req.body?.email;
+  const email = normalizeEmail(emailRaw);
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: "Valid email is required" });
+  }
+  if (!PUBLIC_BASE_URL) {
+    return res.status(503).json({ error: "Auth is not configured", hint: "Set PUBLIC_BASE_URL" });
+  }
+
+  const user = getOrCreateUserByEmail(email);
+  const token = randomToken(32);
+  const tokenHash = sha256Base64Url(token);
+  const now = Date.now();
+  const expiresAt = now + 20 * 60 * 1000;
+  const ip = getClientIp(req);
+  authDb
+    .prepare(
+      "INSERT INTO magic_links (user_id, token_hash, expires_at, used_at, created_at, created_ip) VALUES (?, ?, ?, NULL, ?, ?)"
+    )
+    .run(user.id, tokenHash, expiresAt, now, ip);
+
+  const link = `${PUBLIC_BASE_URL}/auth.html?token=${encodeURIComponent(token)}`;
+
+  try {
+    await sendMagicLinkEmail({ to: email, link });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("Magic link send:", e.message);
+    return res.status(502).json({ error: "Could not send email" });
+  }
+});
+
+app.post("/api/auth/consume", (req, res) => {
+  const token = String(req.body?.token || "").trim();
+  const deviceId = String(req.body?.deviceId || "").trim();
+  if (!token || token.length < 20) {
+    return res.status(400).json({ error: "Invalid token" });
+  }
+  if (!deviceId || deviceId.length < 10) {
+    return res.status(400).json({ error: "Invalid device" });
+  }
+
+  const tokenHash = sha256Base64Url(token);
+  const link = authDb
+    .prepare(
+      `SELECT ml.id, ml.user_id, ml.expires_at, ml.used_at, u.email, u.premium
+       FROM magic_links ml
+       JOIN users u ON u.id = ml.user_id
+       WHERE ml.token_hash = ?
+       LIMIT 1`
+    )
+    .get(tokenHash);
+
+  if (!link) return res.status(400).json({ error: "Invalid or expired link" });
+  if (link.used_at) return res.status(400).json({ error: "This link was already used" });
+  if (Number(link.expires_at) < Date.now()) return res.status(400).json({ error: "This link expired" });
+
+  const deviceIdHash = sha256Base64Url(deviceId);
+  try {
+    enforceMaxDevicesOrThrow(link.user_id, deviceIdHash, 2);
+  } catch (e) {
+    return res.status(e.status || 403).json({ error: e.message, code: e.code || "DENIED" });
+  }
+
+  const now = Date.now();
+  const tx = authDb.transaction(() => {
+    authDb.prepare("UPDATE magic_links SET used_at = ? WHERE id = ?").run(now, link.id);
+    upsertDevice(link.user_id, deviceIdHash);
+  });
+  tx();
+
+  const premiumToken = link.premium ? signPremiumToken(PREMIUM_SECRET) : "";
+  return res.json({
+    ok: true,
+    email: link.email,
+    premium: Boolean(link.premium),
+    premiumToken,
+  });
+});
 
 function sanitizeCity(value) {
   if (typeof value !== "string") return "";
@@ -178,6 +366,19 @@ app.post("/api/verify-session", async (req, res) => {
     if (session.payment_status !== "paid") {
       return res.status(400).json({ error: "Payment not completed" });
     }
+
+    const email = normalizeEmail(
+      session.customer_details?.email || session.customer_email || ""
+    );
+    if (email && isValidEmail(email)) {
+      try {
+        getOrCreateUserByEmail(email);
+        setUserPremiumByEmail(email, true);
+      } catch (e) {
+        console.error("Premium email bind failed:", e.message);
+      }
+    }
+
     const token = signPremiumToken(PREMIUM_SECRET);
     res.json({ token });
   } catch (err) {

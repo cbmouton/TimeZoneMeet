@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign in — TimeZoneMeet</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 520px; margin: 3rem auto; padding: 0 1rem; line-height: 1.4; }
+    label { display: block; margin: 0.5rem 0; }
+    input { font-size: 1.1rem; padding: 0.6rem; width: 100%; box-sizing: border-box; }
+    button { margin-top: 0.75rem; padding: 0.6rem 0.9rem; font-size: 1rem; cursor: pointer; }
+    .muted { color: #666; font-size: 0.95rem; }
+    .ok { color: #0a0; }
+    .err { color: #a00; }
+  </style>
+</head>
+<body>
+  <p><a href="/">← Back to app</a></p>
+  <h1>Sign in / Restore Premium</h1>
+  <p class="muted">We’ll email you a one-time sign-in link. If you purchased Premium with this email, it will restore on this device.</p>
+
+  <form id="f">
+    <label>
+      Email
+      <input type="email" id="email" autocomplete="email" required placeholder="you@domain.com" />
+    </label>
+    <button type="submit" id="btn">Send sign-in link</button>
+  </form>
+  <p id="msg" class="muted"></p>
+
+  <script src="config.js"></script>
+  <script src="apiBase.js"></script>
+  <script>
+    (function () {
+      var f = document.getElementById("f");
+      var email = document.getElementById("email");
+      var msg = document.getElementById("msg");
+      var btn = document.getElementById("btn");
+
+      f.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        msg.className = "muted";
+        msg.textContent = "";
+        btn.disabled = true;
+
+        try {
+          var base = window.TZM.getApiBase();
+          var res = await fetch(base + "/api/auth/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.value.trim() }),
+          });
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok) {
+            msg.className = "err";
+            msg.textContent = data.error || "Could not send link.";
+          } else {
+            msg.className = "ok";
+            msg.textContent = "Check your email for the sign-in link.";
+          }
+        } catch (e2) {
+          msg.className = "err";
+          msg.textContent = "Network error. Try again.";
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+
