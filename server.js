@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import Database from "better-sqlite3";
 import tzLookup from "tz-lookup";
 import path from "path";
@@ -52,6 +54,12 @@ function premiumFromAuth(req) {
   return verifyPremiumToken(h.slice(7).trim(), PREMIUM_SECRET);
 }
 
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(cors({ origin: true, credentials: true }));
 
 app.post(
@@ -77,6 +85,45 @@ app.post(
 );
 
 app.use(express.json());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
+
+const authStartLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = normalizeEmail(req.body?.email || "");
+    const ip = getClientIp(req);
+    return email ? `${ip}:${email}` : ip;
+  },
+  message: { error: "Too many sign-in attempts. Please wait and try again." },
+});
+
+const authConsumeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many sign-in verifications. Please try again later." },
+});
+
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many checkout attempts. Please try again later." },
+});
+
+app.use("/api", apiLimiter);
 
 function getClientIp(req) {
   const xff = req.headers["x-forwarded-for"];
@@ -178,7 +225,7 @@ function enforceMaxDevicesOrThrow(userId, deviceIdHash, maxDevices = 2) {
   }
 }
 
-app.post("/api/auth/start", async (req, res) => {
+app.post("/api/auth/start", authStartLimiter, async (req, res) => {
   const emailRaw = req.body?.email;
   const email = normalizeEmail(emailRaw);
   if (!isValidEmail(email)) {
@@ -211,7 +258,7 @@ app.post("/api/auth/start", async (req, res) => {
   }
 });
 
-app.post("/api/auth/consume", (req, res) => {
+app.post("/api/auth/consume", authConsumeLimiter, (req, res) => {
   const token = String(req.body?.token || "").trim();
   const deviceId = String(req.body?.deviceId || "").trim();
   if (!token || token.length < 20) {
@@ -353,10 +400,10 @@ async function postStripeCheckoutSession(req, res) {
 
 // Primary path for clients. Some hosts (e.g. Railway + edge) return a non-JSON 503 for
 // POST /api/create-checkout-session — that string matches common WAF/tutorial patterns.
-app.post("/api/stripe-session", postStripeCheckoutSession);
-app.post("/api/create-checkout-session", postStripeCheckoutSession);
+app.post("/api/create-checkout-session", checkoutLimiter, postStripeCheckoutSession);
+app.post("/api/stripe-session", checkoutLimiter, postStripeCheckoutSession);
 
-app.post("/api/verify-session", async (req, res) => {
+app.post("/api/verify-session", checkoutLimiter, async (req, res) => {
   const sessionId = req.body?.sessionId;
   if (!stripe || !sessionId || typeof sessionId !== "string") {
     return res.status(400).json({ error: "Invalid request" });
