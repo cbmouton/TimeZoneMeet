@@ -1,0 +1,20 @@
+Implemented in: POST /api/schedule (server.js), lib/scheduleSlots.js, public/schedule.html
+
+Civil window (configurable): local 05:00–20:00 in EACH zone (avoid before 5am and after 8pm).
+
+VALID SLOT (must enforce START and END)
+- Given: IANA zones A and B, meeting duration D (minutes), search horizon (days).
+- Candidate: UTC instant t_start; t_end = t_start + D minutes.
+- For zone Z in {A, B}:
+  - Compute local wall-clock datetimes for t_start and t_end in Z (DST-aware).
+  - local_start(Z) must be >= window open (05:00) that local calendar day.
+  - local_end(Z) must be <= window close (20:00) that local calendar day.
+- If the meeting crosses local midnight in a zone, evaluate using actual local datetimes:
+  both endpoints must still satisfy the window on their respective local dates
+  (e.g. no segment that begins before 05:00 or ends after 20:00 local).
+
+Scoring when no slot satisfies both zones
+- Prefer smallest combined “distance” from allowed bounds (as previously discussed).
+
+Weekend / calendar-day UX (separate)
+- Display both local start/end with weekday + date; flag when either side is Sat/Sun.

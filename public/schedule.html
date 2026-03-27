@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#1a4a8c" />
+  <meta name="application-name" content="TimeZoneMeet" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>Schedule a meeting — TimeZoneMeet</title>
+  <meta name="description" content="Find meeting times that fall between 5am and 8pm local time in two cities, including meeting end times." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://timezonemeet.app/schedule.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Schedule a meeting — TimeZoneMeet" />
+  <meta property="og:description" content="Suggest times that work in two time zones, respecting civil hours at both ends of the meeting." />
+  <meta property="og:url" content="https://timezonemeet.app/schedule.html" />
+  <meta property="og:site_name" content="TimeZoneMeet" />
+  <meta property="og:image" content="https://timezonemeet.app/icon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <style>
+    :root { --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 2rem;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 1.35rem; margin: 0 0 0.5rem; }
+    .intro { line-height: 1.45; color: #333; margin: 0 0 1rem; }
+    label { display: block; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    input {
+      font-size: 1.1rem;
+      padding: 0.55rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .suggestions { position: relative; }
+    .list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .item {
+      padding: 0.55rem;
+      cursor: pointer;
+      border-top: 1px solid #eee;
+    }
+    .item:hover { background: #f6f6f6; }
+    .item small { color: #666; }
+    .dur-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    .dur-row span { font-weight: 600; margin-right: 0.25rem; }
+    .dur-btn {
+      padding: 0.45rem 0.65rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      border-radius: 6px;
+    }
+    .dur-btn.active {
+      background: #1a4a8c;
+      color: #fff;
+      border-color: #1a4a8c;
+    }
+    .row-actions { margin-top: 1rem; }
+    button#scheduleBtn {
+      padding: 0.65rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #1a4a8c;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+    }
+    button#scheduleBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .hint { color: #555; font-size: 0.92rem; margin-top: 0.75rem; line-height: 1.45; }
+    .muted { color: #666; font-size: 0.9rem; }
+    #scheduleResults { margin-top: 1.25rem; }
+    .section-title { font-size: 1rem; margin: 1rem 0 0.5rem; }
+    .slot {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 0.65rem;
+      background: #fafafa;
+    }
+    .slot.compromise { border-color: #c9a227; background: #fffbeb; }
+    .slot-title { font-weight: 600; margin-bottom: 0.35rem; }
+    .slot-side { margin: 0.35rem 0; font-size: 0.95rem; }
+    .slot-side code { font-size: 0.8rem; color: #444; }
+    .badges { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .badge {
+      font-size: 0.78rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .badge.warn { background: #fff3cd; color: #664d03; border: 1px solid #ffc107; }
+    .badge.info { background: #e7f1ff; color: #084298; border: 1px solid #9ec5fe; }
+    .site-footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee; font-size: 0.9rem; }
+    .site-footer a { color: #06c; }
+    a { color: #06c; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p><a href="/">← Home</a></p>
+    <h1>Schedule across time zones</h1>
+    <p class="intro">
+      Pick two cities and a meeting length. We suggest start times in the next <strong>14 days</strong> so that
+      <strong>both the start and end</strong> of the meeting fall between <strong>5:00 AM and 8:00 PM local time</strong> in each place.
+    </p>
+
+    <label for="cityInputA">First location</label>
+    <div class="suggestions">
+      <input type="text" id="cityInputA" placeholder="City name…" autocomplete="off" />
+      <div id="suggestListA" class="list" style="display: none;"></div>
+    </div>
+
+    <label for="cityInputB">Second location</label>
+    <div class="suggestions">
+      <input type="text" id="cityInputB" placeholder="City name…" autocomplete="off" />
+      <div id="suggestListB" class="list" style="display: none;"></div>
+    </div>
+
+    <div class="dur-row" role="group" aria-label="Meeting length">
+      <span>Length</span>
+      <button type="button" class="dur-btn" data-dur="30">30 min</button>
+      <button type="button" class="dur-btn" data-dur="45">45 min</button>
+      <button type="button" class="dur-btn active" data-dur="60">60 min</button>
+      <button type="button" class="dur-btn" data-dur="90">90 min</button>
+    </div>
+
+    <div class="row-actions">
+      <button type="button" id="scheduleBtn">Suggest times</button>
+    </div>
+
+    <p class="hint">
+      If no time fits both windows, we list the closest options (may fall outside 5am–8pm). Weekend days are called out when either location is on Saturday or Sunday.
+    </p>
+
+    <div id="scheduleResults" class="muted" aria-live="polite"></div>
+
+    <footer class="site-footer">
+      <a href="/privacy.html">Privacy Policy</a>
+      · <a href="/about.html">About</a>
+      · <a href="/faq.html">FAQ</a>
+      · <a href="/blog.html">Blog</a>
+      · <a href="/schedule.html">Schedule</a>
+      · <a href="/signin.html">Sign in</a>
+      · <a href="/">TimeZoneMeet</a>
+    </footer>
+  </div>
+  <script src="/config.js"></script>
+  <script src="/consent.js"></script>
+  <script src="/apiBase.js"></script>
+  <script src="/premium-sync.js"></script>
+  <script src="/schedule.js"></script>
+</body>
+</html>

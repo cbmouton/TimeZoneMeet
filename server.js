@@ -10,6 +10,7 @@ import Stripe from "stripe";
 import { signPremiumToken, verifyPremiumToken } from "./lib/premiumToken.js";
 import { openAuthDb } from "./lib/authDb.js";
 import { isValidEmail, normalizeEmail, randomToken, sha256Base64Url } from "./lib/authTokens.js";
+import { findScheduleSlots } from "./lib/scheduleSlots.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -608,6 +609,58 @@ app.post("/api/timezone", (req, res) => {
   } catch (err) {
     console.error("Timezone lookup failed:", err.message);
     return res.status(500).json({ error: "Timezone lookup failed" });
+  }
+});
+
+app.post("/api/schedule", (req, res) => {
+  const cityA = sanitizeCity(req.body?.cityA);
+  const countryA = sanitizeCountry(req.body?.countryA);
+  const cityB = sanitizeCity(req.body?.cityB);
+  const countryB = sanitizeCountry(req.body?.countryB);
+  let durationMinutes = Number(req.body?.durationMinutes);
+
+  if (!cityA || !cityB) {
+    return res.status(400).json({ error: "cityA and cityB are required" });
+  }
+  if (!Number.isFinite(durationMinutes)) durationMinutes = 60;
+  durationMinutes = Math.round(durationMinutes);
+  if (durationMinutes < 15 || durationMinutes > 480) {
+    return res.status(400).json({ error: "durationMinutes must be between 15 and 480" });
+  }
+
+  try {
+    const rowA = lookupCityRow(cityA, countryA);
+    const rowB = lookupCityRow(cityB, countryB);
+    if (!rowA || !rowB) {
+      return res.status(404).json({ error: "City not found" });
+    }
+
+    const tzA = tzLookup(rowA.lat, rowA.lon);
+    const tzB = tzLookup(rowB.lat, rowB.lon);
+
+    const result = findScheduleSlots({
+      tzA,
+      tzB,
+      cityA: rowA.name,
+      countryA: rowA.country,
+      cityB: rowB.name,
+      countryB: rowB.country,
+      durationMinutes,
+    });
+
+    return res.json({
+      ok: true,
+      locations: [
+        { city: rowA.name, country: rowA.country, timezone: tzA },
+        { city: rowB.name, country: rowB.country, timezone: tzB },
+      ],
+      durationMinutes: result.durationMinutes,
+      perfect: result.perfect,
+      compromise: result.compromise,
+    });
+  } catch (err) {
+    console.error("Schedule failed:", err.message);
+    return res.status(500).json({ error: "Schedule failed" });
   }
 });
 
