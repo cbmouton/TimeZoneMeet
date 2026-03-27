@@ -20,6 +20,7 @@ const authDb = openAuthDb();
 
 const app = express();
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
 const PORT = process.env.PORT || 8080;
 
 const stripeSecret = (process.env.STRIPE_SECRET_KEY || "").trim();
@@ -28,6 +29,10 @@ const stripePriceId = (process.env.STRIPE_PRICE_ID || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const AUTH_FROM_EMAIL = (process.env.AUTH_FROM_EMAIL || "").trim();
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
+const CORS_ALLOWLIST = (process.env.CORS_ALLOWLIST || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 /** Stripe Checkout line_items[].price must be a Price object id (price_…), not an amount. */
 function isStripePriceId(value) {
@@ -54,13 +59,36 @@ function premiumFromAuth(req) {
   return verifyPremiumToken(h.slice(7).trim(), PREMIUM_SECRET);
 }
 
+function getDefaultAllowedOrigins() {
+  const defaults = new Set([
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+  ]);
+  if (PUBLIC_BASE_URL) defaults.add(PUBLIC_BASE_URL);
+  for (const o of CORS_ALLOWLIST) defaults.add(o);
+  return defaults;
+}
+
+const allowedOrigins = getDefaultAllowedOrigins();
+const corsOptions = {
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.has(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "OPTIONS"],
+};
+
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   })
 );
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors(corsOptions));
 
 app.post(
   "/api/stripe-webhook",
@@ -84,7 +112,8 @@ app.post(
   }
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: false, limit: "16kb" }));
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -112,6 +141,7 @@ const authConsumeLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => getClientIp(req),
   message: { error: "Too many sign-in verifications. Please try again later." },
 });
 
