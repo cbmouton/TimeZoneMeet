@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Utility/auth pages
+Disallow: /auth.html
+
+Sitemap: https://timezonemeet.app/sitemap.xml
+
