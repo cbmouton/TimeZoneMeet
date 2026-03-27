@@ -161,6 +161,31 @@ function getClientIp(req) {
   return req.socket?.remoteAddress || "";
 }
 
+function logSecurityEvent(req, event, detail = {}) {
+  const payload = {
+    event,
+    ip: getClientIp(req),
+    ua: String(req.get("user-agent") || "").slice(0, 180),
+    path: req.path,
+    ts: new Date().toISOString(),
+    ...detail,
+  };
+  console.info("[security]", JSON.stringify(payload));
+}
+
+function requireHumanLikeRequest(req, res, next) {
+  const ua = String(req.get("user-agent") || "").toLowerCase();
+  if (!ua || ua.length < 8) {
+    logSecurityEvent(req, "auth_blocked_missing_ua");
+    return res.status(400).json({ error: "Bad request" });
+  }
+  if (/(bot|crawler|spider|curl|wget|python-requests)/i.test(ua)) {
+    logSecurityEvent(req, "auth_blocked_bot_ua");
+    return res.status(400).json({ error: "Bad request" });
+  }
+  return next();
+}
+
 async function sendMagicLinkEmail({ to, link }) {
   if (!RESEND_API_KEY || !AUTH_FROM_EMAIL) {
     throw new Error("Resend is not configured (set RESEND_API_KEY and AUTH_FROM_EMAIL)");
@@ -255,13 +280,21 @@ function enforceMaxDevicesOrThrow(userId, deviceIdHash, maxDevices = 2) {
   }
 }
 
-app.post("/api/auth/start", authStartLimiter, async (req, res) => {
+app.post("/api/auth/start", authStartLimiter, requireHumanLikeRequest, async (req, res) => {
   const emailRaw = req.body?.email;
   const email = normalizeEmail(emailRaw);
+  const honeypot = String(req.body?.website || "").trim();
+  if (honeypot) {
+    logSecurityEvent(req, "auth_honeypot_triggered");
+    // Return success-shaped response to avoid teaching bots.
+    return res.json({ ok: true });
+  }
   if (!isValidEmail(email)) {
+    logSecurityEvent(req, "auth_start_invalid_email");
     return res.status(400).json({ error: "Valid email is required" });
   }
   if (!PUBLIC_BASE_URL) {
+    logSecurityEvent(req, "auth_start_not_configured");
     return res.status(503).json({ error: "Auth is not configured", hint: "Set PUBLIC_BASE_URL" });
   }
 
@@ -281,20 +314,25 @@ app.post("/api/auth/start", authStartLimiter, async (req, res) => {
 
   try {
     await sendMagicLinkEmail({ to: email, link });
+    logSecurityEvent(req, "auth_start_sent");
     return res.json({ ok: true });
   } catch (e) {
     console.error("Magic link send:", e.message);
-    return res.status(502).json({ error: "Could not send email" });
+    logSecurityEvent(req, "auth_start_send_failed");
+    // Keep response generic to reduce account/email enumeration.
+    return res.json({ ok: true });
   }
 });
 
-app.post("/api/auth/consume", authConsumeLimiter, (req, res) => {
+app.post("/api/auth/consume", authConsumeLimiter, requireHumanLikeRequest, (req, res) => {
   const token = String(req.body?.token || "").trim();
   const deviceId = String(req.body?.deviceId || "").trim();
   if (!token || token.length < 20) {
+    logSecurityEvent(req, "auth_consume_invalid_token_shape");
     return res.status(400).json({ error: "Invalid token" });
   }
   if (!deviceId || deviceId.length < 10) {
+    logSecurityEvent(req, "auth_consume_invalid_device_shape");
     return res.status(400).json({ error: "Invalid device" });
   }
 
@@ -309,14 +347,24 @@ app.post("/api/auth/consume", authConsumeLimiter, (req, res) => {
     )
     .get(tokenHash);
 
-  if (!link) return res.status(400).json({ error: "Invalid or expired link" });
-  if (link.used_at) return res.status(400).json({ error: "This link was already used" });
-  if (Number(link.expires_at) < Date.now()) return res.status(400).json({ error: "This link expired" });
+  if (!link) {
+    logSecurityEvent(req, "auth_consume_link_not_found");
+    return res.status(400).json({ error: "Invalid or expired link" });
+  }
+  if (link.used_at) {
+    logSecurityEvent(req, "auth_consume_link_already_used");
+    return res.status(400).json({ error: "This link was already used" });
+  }
+  if (Number(link.expires_at) < Date.now()) {
+    logSecurityEvent(req, "auth_consume_link_expired");
+    return res.status(400).json({ error: "This link expired" });
+  }
 
   const deviceIdHash = sha256Base64Url(deviceId);
   try {
     enforceMaxDevicesOrThrow(link.user_id, deviceIdHash, 2);
   } catch (e) {
+    logSecurityEvent(req, "auth_consume_device_limit", { userId: link.user_id });
     return res.status(e.status || 403).json({ error: e.message, code: e.code || "DENIED" });
   }
 
@@ -328,6 +376,10 @@ app.post("/api/auth/consume", authConsumeLimiter, (req, res) => {
   tx();
 
   const premiumToken = link.premium ? signPremiumToken(PREMIUM_SECRET) : "";
+  logSecurityEvent(req, "auth_consume_success", {
+    userId: link.user_id,
+    premium: Boolean(link.premium),
+  });
   return res.json({
     ok: true,
     email: link.email,

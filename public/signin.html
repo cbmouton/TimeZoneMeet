@@ -27,6 +27,7 @@
     .muted { color: #666; font-size: 0.95rem; }
     .ok { color: #0a0; }
     .err { color: #a00; }
+    .hp { position: absolute !important; left: -10000px !important; top: auto !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
   </style>
 </head>
 <body>
@@ -39,6 +40,10 @@
       Email
       <input type="email" id="email" autocomplete="email" required placeholder="you@domain.com" />
     </label>
+    <label class="hp" aria-hidden="true">
+      Website
+      <input type="text" id="website" tabindex="-1" autocomplete="off" />
+    </label>
     <button type="submit" id="btn">Send sign-in link</button>
   </form>
   <p id="msg" class="muted"></p>
@@ -50,6 +55,7 @@
     (function () {
       var f = document.getElementById("f");
       var email = document.getElementById("email");
+      var website = document.getElementById("website");
       var msg = document.getElementById("msg");
       var btn = document.getElementById("btn");
 
@@ -64,7 +70,10 @@
           var res = await fetch(base + "/api/auth/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email.value.trim() }),
+            body: JSON.stringify({
+              email: email.value.trim(),
+              website: website ? website.value.trim() : "",
+            }),
           });
           var data = await res.json().catch(function () { return {}; });
           if (!res.ok) {
