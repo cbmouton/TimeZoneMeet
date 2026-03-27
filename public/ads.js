@@ -109,6 +109,7 @@
 
   function initAdsense() {
     if (isPremium()) return;
+    if (typeof window.__hasAdConsent === "function" && !window.__hasAdConsent()) return;
     if (window.__adsenseLoaded) return;
     const client = window.__ADSENSE_CLIENT__;
     const slot = window.__ADSENSE_SLOT__;
@@ -141,4 +142,10 @@
     };
     document.head.appendChild(s);
   }
+
+  window.addEventListener("tz-consent-changed", () => {
+    if (typeof window.__applyPremiumUI === "function") {
+      window.__applyPremiumUI();
+    }
+  });
 })();
