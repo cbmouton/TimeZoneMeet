@@ -1,0 +1,21 @@
+TimeZoneMeet — add a new blog post (static HTML)
+
+1) Copy dev/blog-post-template.html → public/blog/<slug>.html
+   Slug: lowercase, hyphens (e.g. dst-explained.html).
+
+2) In the new file, replace PLACEHOLDER_* (title, meta, canonical, JSON-LD, dates, body).
+
+3) public/blog.html
+   - Add a new <li> at the TOP of <ul class="posts"> (newest first).
+   - In <script type="application/ld+json">, add one blogPost { headline, url }.
+
+4) public/sitemap.xml
+   - Add <url><loc>https://timezonemeet.app/blog/<slug>.html</loc></url>
+   - Optional: <lastmod>YYYY-MM-DD</lastmod> inside that <url>.
+
+5) Optional: link from faq.html or a sentence on index if the topic fits.
+
+Content (stronger “useful site” signal):
+- One clear question per post; avoid repeating the FAQ verbatim.
+- Prefer 600+ words for guides; use H2s, a list or example.
+- Link internally to /, /faq.html, or other posts where relevant.

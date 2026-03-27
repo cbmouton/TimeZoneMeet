@@ -7,10 +7,22 @@
     <loc>https://timezonemeet.app/privacy.html</loc>
   </url>
   <url>
+    <loc>https://timezonemeet.app/about.html</loc>
+  </url>
+  <url>
     <loc>https://timezonemeet.app/signin.html</loc>
   </url>
   <url>
     <loc>https://timezonemeet.app/faq.html</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/blog.html</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/blog/how-to-find-city-local-time.html</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/blog/scheduling-meetings-across-time-zones.html</loc>
   </url>
 </urlset>
 
