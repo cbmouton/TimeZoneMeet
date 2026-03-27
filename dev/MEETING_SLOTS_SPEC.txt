@@ -1,5 +1,7 @@
 Implemented in: POST /api/schedule (server.js), lib/scheduleSlots.js, public/schedule.html
 
+Default search horizon: 5 days (horizonDays in findScheduleSlots).
+
 Civil window (configurable): local 05:00–20:00 in EACH zone (avoid before 5am and after 8pm).
 
 VALID SLOT (must enforce START and END)

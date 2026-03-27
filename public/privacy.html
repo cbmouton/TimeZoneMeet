@@ -27,13 +27,32 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <style>
     body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
-    h1 { font-size: 1.5rem; }
+    .brand-rail {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .brand-rail img {
+      width: 96px;
+      max-width: 22vw;
+      height: auto;
+      opacity: 0.85;
+      user-select: none;
+      pointer-events: none;
+    }
+    .brand-rail h1 { margin: 0; text-align: center; flex: 1; font-size: 1.5rem; line-height: 1.2; }
     a { color: #06c; }
   </style>
 </head>
 <body>
   <p><a href="/">← Back to app</a></p>
-  <h1>Privacy Policy</h1>
+  <div class="brand-rail">
+    <img src="/icon-192.png" alt="" aria-hidden="true" />
+    <h1>Privacy Policy</h1>
+    <img src="/icon-192.png" alt="" aria-hidden="true" />
+  </div>
   <p><strong>Last updated:</strong> March 2026</p>
 
   <h2>What TimeZoneMeet does</h2>

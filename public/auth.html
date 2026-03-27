@@ -17,12 +17,33 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <style>
     body { font-family: system-ui, sans-serif; max-width: 520px; margin: 3rem auto; padding: 0 1rem; }
+    .brand-rail {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .brand-rail img {
+      width: 96px;
+      max-width: 22vw;
+      height: auto;
+      opacity: 0.85;
+      user-select: none;
+      pointer-events: none;
+    }
+    .brand-rail h1 { margin: 0; text-align: center; flex: 1; font-size: 1.2rem; line-height: 1.2; }
     .muted { color: #666; }
     .err { color: #a00; }
     .ok { color: #0a0; }
   </style>
 </head>
 <body>
+  <div class="brand-rail">
+    <img src="/icon-192.png" alt="" aria-hidden="true" />
+    <h1>Signing in</h1>
+    <img src="/icon-192.png" alt="" aria-hidden="true" />
+  </div>
   <p id="msg" class="muted">Signing you in…</p>
 
   <script src="consent.js"></script>

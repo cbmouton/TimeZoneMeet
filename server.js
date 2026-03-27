@@ -655,6 +655,7 @@ app.post("/api/schedule", (req, res) => {
         { city: rowB.name, country: rowB.country, timezone: tzB },
       ],
       durationMinutes: result.durationMinutes,
+      horizonDays: result.horizonDays,
       perfect: result.perfect,
       compromise: result.compromise,
     });

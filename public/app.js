@@ -5,6 +5,14 @@ const suggestList = document.getElementById("suggestList");
 const lookupBtn = document.getElementById("lookupBtn");
 const clearBtn = document.getElementById("clearBtn");
 
+const hasMainLookup =
+  input &&
+  resultDiv &&
+  metaDiv &&
+  suggestList &&
+  lookupBtn &&
+  clearBtn;
+
 let selected = null; // { name, country }
 
 function showSuggestions(items) {
@@ -104,54 +112,56 @@ async function lookup() {
   }
 }
 
-input.addEventListener("input", () => {
-  selected = null;
+if (hasMainLookup) {
+  input.addEventListener("input", () => {
+    selected = null;
 
-  const q = input.value.trim();
-  if (!q) {
-    hideSuggestions();
-    return;
-  }
+    const q = input.value.trim();
+    if (!q) {
+      hideSuggestions();
+      return;
+    }
 
-  clearTimeout(suggestTimer);
-  suggestTimer = setTimeout(async () => {
-    try {
-      const data = await fetchSuggestions(q);
-      showSuggestions(data.suggestions);
-    } catch {
+    clearTimeout(suggestTimer);
+    suggestTimer = setTimeout(async () => {
+      try {
+        const data = await fetchSuggestions(q);
+        showSuggestions(data.suggestions);
+      } catch {
+        hideSuggestions();
+      }
+    }, 200);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      hideSuggestions();
+      lookup();
+    } else if (e.key === "Escape") {
       hideSuggestions();
     }
-  }, 200);
-});
+  });
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+  document.addEventListener("click", (e) => {
+    if (!suggestList.contains(e.target) && e.target !== input) {
+      hideSuggestions();
+    }
+  });
+
+  lookupBtn.addEventListener("click", () => {
     hideSuggestions();
     lookup();
-  } else if (e.key === "Escape") {
+  });
+
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    selected = null;
+    resultDiv.textContent = "";
+    metaDiv.textContent = "";
     hideSuggestions();
-  }
-});
-
-document.addEventListener("click", (e) => {
-  if (!suggestList.contains(e.target) && e.target !== input) {
-    hideSuggestions();
-  }
-});
-
-lookupBtn.addEventListener("click", () => {
-  hideSuggestions();
-  lookup();
-});
-
-clearBtn.addEventListener("click", () => {
-  input.value = "";
-  selected = null;
-  resultDiv.textContent = "";
-  metaDiv.textContent = "";
-  hideSuggestions();
-  input.focus();
-});
+    input.focus();
+  });
+}
 
 const goPremiumBtn = document.getElementById("goPremiumBtn");
 if (goPremiumBtn) {

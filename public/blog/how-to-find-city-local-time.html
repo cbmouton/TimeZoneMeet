@@ -38,7 +38,22 @@
   </script>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; }
-    h1 { margin-bottom: 0.5rem; font-size: 1.35rem; }
+    .brand-rail {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .brand-rail img {
+      width: 96px;
+      max-width: 22vw;
+      height: auto;
+      opacity: 0.85;
+      user-select: none;
+      pointer-events: none;
+    }
+    .brand-rail h1 { margin: 0; text-align: center; flex: 1; font-size: 1.35rem; line-height: 1.2; }
     h2 { margin-top: 1.4rem; margin-bottom: 0.45rem; font-size: 1.12rem; }
     p { margin-top: 0; color: #222; }
     .muted { color: #666; font-size: 0.95rem; }
@@ -49,8 +64,12 @@
 </head>
 <body>
   <p><a href="/">← Back to app</a> · <a href="/blog.html">Blog</a></p>
-  <article>
+  <div class="brand-rail">
+    <img src="/icon-192.png" alt="" aria-hidden="true" />
     <h1>How to find a city’s local time (step by step)</h1>
+    <img src="/icon-192.png" alt="" aria-hidden="true" />
+  </div>
+  <article>
     <p class="muted"><time datetime="2026-03-27">March 27, 2026</time></p>
 
     <p>Whether you are planning a call, checking travel plans, or comparing clocks, the goal is the same: you need the <em>current</em> local time in a specific place, not just a generic offset. Here is a simple workflow using <a href="/">TimeZoneMeet</a>.</p>

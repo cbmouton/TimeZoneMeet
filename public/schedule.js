@@ -137,6 +137,21 @@ function payloadForCity(input, selected) {
   return { city: raw };
 }
 
+function formatSideTimes(side) {
+  const sameLocalDay = side.localDate === side.localDateEnd;
+  const ts = escapeHtml(side.timeStart);
+  const te = escapeHtml(side.timeEnd);
+  const d1 = escapeHtml(side.dateLabel);
+  const d2 = escapeHtml(side.dateEndLabel);
+  if (sameLocalDay) {
+    return `<div class="slot-times">${d1}: <strong>${ts}</strong> → <strong>${te}</strong> local</div>`;
+  }
+  return (
+    `<div class="slot-times">Start: ${d1} at <strong>${ts}</strong> local</div>` +
+    `<div class="slot-times">End: ${d2} at <strong>${te}</strong> local</div>`
+  );
+}
+
 function renderSlot(slot, compromise) {
   const { sideA, sideB, flags } = slot;
   const badges = [];
@@ -162,16 +177,16 @@ function renderSlot(slot, compromise) {
 
   return `
     <div class="slot ${compromise ? "compromise" : ""}">
-      <div class="slot-title">${escapeHtml(sideA.dateLabel)}</div>
+      <div class="slot-title">Both locations (same moment)</div>
       <div class="slot-side">
-        <strong>${escapeHtml(sideA.city)}</strong> (${escapeHtml(sideA.country)}):
-        ${escapeHtml(sideA.timeRange)}
-        <br /><code>${escapeHtml(sideA.timezone)}</code>
+        <div class="slot-loc"><strong>${escapeHtml(sideA.city)}</strong> (${escapeHtml(sideA.country)})</div>
+        ${formatSideTimes(sideA)}
+        <div class="slot-tz"><code>${escapeHtml(sideA.timezone)}</code></div>
       </div>
       <div class="slot-side">
-        <strong>${escapeHtml(sideB.city)}</strong> (${escapeHtml(sideB.country)}):
-        ${escapeHtml(sideB.timeRange)}
-        <br /><code>${escapeHtml(sideB.timezone)}</code>
+        <div class="slot-loc"><strong>${escapeHtml(sideB.city)}</strong> (${escapeHtml(sideB.country)})</div>
+        ${formatSideTimes(sideB)}
+        <div class="slot-tz"><code>${escapeHtml(sideB.timezone)}</code></div>
       </div>
       ${badges.length ? `<div class="badges">${badges.join("")}</div>` : ""}
       ${pen}
@@ -212,21 +227,24 @@ scheduleBtn.addEventListener("click", async () => {
       return;
     }
 
-    const parts = [];
+    const horizon = Number(data.horizonDays) || 5;
+    const parts = [
+      `<p class="muted slot-intro">Same moment shown as <strong>local start → local end</strong> in each place. Search window: <strong>${horizon} day${horizon === 1 ? "" : "s"}</strong>.</p>`,
+    ];
     if (data.perfect && data.perfect.length) {
       parts.push(
-        `<h2 class="section-title">Inside 5am–8pm local (start and end)</h2>` +
+        `<h2 class="section-title">Good fit — neither side before 5am or after 8pm local (whole meeting)</h2>` +
           data.perfect.map((s) => renderSlot(s, false)).join("")
       );
     } else {
       parts.push(
-        `<p class="muted">No slot in the next 14 days keeps both the meeting start and end between 5am and 8pm in both places. Try another length or cities—or use the closest options below.</p>`
+        `<p class="muted">No slot in the next ${horizon} day${horizon === 1 ? "" : "s"} keeps both places off the call before 5am or after 8pm local for the full length. Try another duration or cities—or see the closest options below.</p>`
       );
     }
 
     if (data.compromise && data.compromise.length) {
       parts.push(
-        `<h2 class="section-title">Closest times (may be outside preferred hours)</h2>` +
+        `<h2 class="section-title">Closest alternatives (may be early or late locally)</h2>` +
           data.compromise.map((s) => renderSlot(s, true)).join("")
       );
     }

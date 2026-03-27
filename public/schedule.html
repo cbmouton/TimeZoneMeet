@@ -5,21 +5,55 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#1a4a8c" />
   <meta name="application-name" content="TimeZoneMeet" />
+  <meta name="apple-mobile-web-app-title" content="TimeZoneMeet" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="author" content="TimeZoneMeet" />
+  <meta name="keywords" content="schedule meeting time zones,find meeting time two cities,international call scheduler,timezone meeting planner,cross timezone meeting" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Schedule a meeting — TimeZoneMeet</title>
-  <meta name="description" content="Find meeting times that fall between 5am and 8pm local time in two cities, including meeting end times." />
+  <title>Schedule a meeting across time zones — TimeZoneMeet</title>
+  <meta name="description" content="Free meeting-time finder: pick two cities and a duration. TimeZoneMeet suggests slots in the next five days so neither side is on a call before 5am or after 8pm local—from start to end." />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://timezonemeet.app/schedule.html" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Schedule a meeting — TimeZoneMeet" />
-  <meta property="og:description" content="Suggest times that work in two time zones, respecting civil hours at both ends of the meeting." />
+  <meta property="og:title" content="Schedule a meeting across time zones — TimeZoneMeet" />
+  <meta property="og:description" content="Pick two cities; get suggested call times in both local clocks, avoiding very early and very late hours for the whole meeting." />
   <meta property="og:url" content="https://timezonemeet.app/schedule.html" />
   <meta property="og:site_name" content="TimeZoneMeet" />
+  <meta property="og:locale" content="en_US" />
   <meta property="og:image" content="https://timezonemeet.app/icon-512.png" />
-  <meta name="twitter:card" content="summary" />
+  <meta property="og:image:alt" content="TimeZoneMeet logo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@timezonemeet" />
+  <meta name="twitter:title" content="Schedule a meeting across time zones — TimeZoneMeet" />
+  <meta name="twitter:description" content="Two cities, one meeting: suggested times with local start and end in each place." />
+  <meta name="twitter:image" content="https://timezonemeet.app/icon-512.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Schedule a meeting across time zones",
+      "url": "https://timezonemeet.app/schedule.html",
+      "description": "Pick two cities and a meeting length; get suggested times in each location's local clock, avoiding calls before 5am or after 8pm local for the full duration.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "TimeZoneMeet",
+        "url": "https://timezonemeet.app/"
+      }
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "TimeZoneMeet", "item": "https://timezonemeet.app/" },
+        { "@type": "ListItem", "position": 2, "name": "Schedule", "item": "https://timezonemeet.app/schedule.html" }
+      ]
+    }
+  </script>
   <style>
     :root { --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
     body {
@@ -29,7 +63,41 @@
       padding-bottom: var(--safe-bottom);
     }
     .wrap { max-width: 560px; margin: 0 auto; }
-    h1 { font-size: 1.35rem; margin: 0 0 0.5rem; }
+    .brand-rail {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+    }
+    .brand-rail img {
+      width: 96px;
+      max-width: 22vw;
+      height: auto;
+      opacity: 0.85;
+      user-select: none;
+      pointer-events: none;
+    }
+    .brand-rail h1 {
+      margin: 0;
+      text-align: center;
+      flex: 1;
+      font-size: 1.2rem;
+      line-height: 1.25;
+    }
+    .premium-bar { font-size: 0.95rem; margin: 0.75rem 0; }
+    #premiumActiveNote { display: none; color: #0a0; }
+    #premiumSignOutBtn { display: none; font-size: 0.9rem; }
+    .ad-slot {
+      margin: 1rem 0;
+      min-height: 90px;
+      text-align: center;
+      background: #f9f9f9;
+      border: 1px dashed #ccc;
+      border-radius: 4px;
+      padding: 0.5rem;
+    }
+    .ad-slot .ad-placeholder { color: #888; font-size: 0.85rem; padding: 1rem; }
     .intro { line-height: 1.45; color: #333; margin: 0 0 1rem; }
     label { display: block; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.25rem; font-size: 0.95rem; }
     input {
@@ -92,6 +160,7 @@
     button#scheduleBtn:disabled { opacity: 0.55; cursor: not-allowed; }
     .hint { color: #555; font-size: 0.92rem; margin-top: 0.75rem; line-height: 1.45; }
     .muted { color: #666; font-size: 0.9rem; }
+    .slot-intro { margin-bottom: 0.75rem; line-height: 1.45; }
     #scheduleResults { margin-top: 1.25rem; }
     .section-title { font-size: 1rem; margin: 1rem 0 0.5rem; }
     .slot {
@@ -103,8 +172,11 @@
     }
     .slot.compromise { border-color: #c9a227; background: #fffbeb; }
     .slot-title { font-weight: 600; margin-bottom: 0.35rem; }
-    .slot-side { margin: 0.35rem 0; font-size: 0.95rem; }
-    .slot-side code { font-size: 0.8rem; color: #444; }
+    .slot-side { margin: 0.5rem 0; font-size: 0.95rem; }
+    .slot-loc { margin-bottom: 0.25rem; }
+    .slot-times { margin: 0.2rem 0; line-height: 1.4; }
+    .slot-tz { margin-top: 0.25rem; }
+    .slot-tz code { font-size: 0.8rem; color: #444; }
     .badges { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .badge {
       font-size: 0.78rem;
@@ -122,10 +194,22 @@
 <body>
   <div class="wrap">
     <p><a href="/">← Home</a></p>
-    <h1>Schedule across time zones</h1>
+    <div class="brand-rail">
+      <img src="/icon-192.png" alt="" aria-hidden="true" />
+      <h1>Schedule across time zones</h1>
+      <img src="/icon-192.png" alt="" aria-hidden="true" />
+    </div>
+
+    <p class="premium-bar">
+      <button type="button" id="goPremiumBtn">Go Premium</button>
+      <span id="premiumActiveNote">Premium active — ads hidden.</span>
+      <button type="button" id="premiumSignOutBtn">Sign out premium</button>
+    </p>
+
     <p class="intro">
-      Pick two cities and a meeting length. We suggest start times in the next <strong>14 days</strong> so that
-      <strong>both the start and end</strong> of the meeting fall between <strong>5:00 AM and 8:00 PM local time</strong> in each place.
+      Pick two cities and how long you need. We search the <strong>next five days</strong> and suggest slots where
+      <strong>neither place</strong> is asked to meet <strong>before 5:00 AM</strong> or <strong>after 8:00 PM</strong>
+      <strong>local time</strong>—from the moment the call starts until it ends.
     </p>
 
     <label for="cityInputA">First location</label>
@@ -153,8 +237,20 @@
     </div>
 
     <p class="hint">
-      If no time fits both windows, we list the closest options (may fall outside 5am–8pm). Weekend days are called out when either location is on Saturday or Sunday.
+      If nothing avoids late or early hours for both sides, we still show the nearest options. We flag weekends when Saturday or Sunday applies locally to either city.
     </p>
+
+    <div class="ad-slot" aria-label="Advertisement">
+      <ins
+        class="adsbygoogle"
+        style="display:block"
+        data-ad-client=""
+        data-ad-slot=""
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      ></ins>
+      <div class="ad-placeholder" id="adPlaceholder">Sponsored</div>
+    </div>
 
     <div id="scheduleResults" class="muted" aria-live="polite"></div>
 
@@ -169,9 +265,26 @@
     </footer>
   </div>
   <script src="/config.js"></script>
+  <script>
+    (function () {
+      var c = window.__ADSENSE_CLIENT__ || "";
+      var s = window.__ADSENSE_SLOT__ || "";
+      document.querySelectorAll("ins.adsbygoogle").forEach(function (el) {
+        el.setAttribute("data-ad-client", c);
+        el.setAttribute("data-ad-slot", s);
+      });
+      if (c && s) {
+        var ph = document.getElementById("adPlaceholder");
+        if (ph) ph.style.display = "none";
+      }
+    })();
+  </script>
   <script src="/consent.js"></script>
   <script src="/apiBase.js"></script>
+  <script src="/iap.js"></script>
+  <script src="/ads.js"></script>
   <script src="/premium-sync.js"></script>
+  <script src="/app.js"></script>
   <script src="/schedule.js"></script>
 </body>
 </html>
