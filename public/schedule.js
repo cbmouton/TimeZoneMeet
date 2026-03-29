@@ -30,6 +30,14 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+function dispCity(name, cc) {
+  return window.TZMLocale ? window.TZMLocale.formatCity(name, cc) : name;
+}
+
+function dispCc(cc) {
+  return window.TZMLocale ? window.TZMLocale.formatCountry(cc) : cc;
+}
+
 function t(key, fallback, vars) {
   return window.tzT ? window.tzT(key, fallback, vars) : fallback;
 }
@@ -53,7 +61,7 @@ function bindSuggest(input, listEl, onPick) {
       .map(
         (s, idx) =>
           `<div class="item" data-idx="${idx}">
-            <div>${escapeHtml(s.name)} <small>${escapeHtml(s.country)}</small></div>
+            <div>${escapeHtml(dispCity(s.name, s.country))} <small>${escapeHtml(dispCc(s.country))}</small></div>
           </div>`
       )
       .join("");
@@ -112,11 +120,11 @@ function bindSuggest(input, listEl, onPick) {
 
 const hideA = bindSuggest(cityInputA, suggestListA, (choice) => {
   selectedA = choice;
-  if (choice) cityInputA.value = choice.name;
+  if (choice) cityInputA.value = dispCity(choice.name, choice.country);
 });
 const hideB = bindSuggest(cityInputB, suggestListB, (choice) => {
   selectedB = choice;
-  if (choice) cityInputB.value = choice.name;
+  if (choice) cityInputB.value = dispCity(choice.name, choice.country);
 });
 
 document.addEventListener("click", (e) => {
@@ -135,7 +143,12 @@ document.querySelectorAll(".dur-btn").forEach((btn) => {
 function payloadForCity(input, selected) {
   const raw = input.value.trim();
   if (!raw) return null;
-  if (selected && selected.name.toLowerCase() === raw.toLowerCase()) {
+  const useSelected =
+    selected &&
+    (window.TZMLocale
+      ? window.TZMLocale.matchesCityInput(raw, selected)
+      : selected.name.toLowerCase() === raw.toLowerCase());
+  if (useSelected) {
     return { city: selected.name, country: selected.country };
   }
   return { city: raw };
@@ -165,12 +178,12 @@ function renderSlot(slot, compromise) {
   }
   if (flags.weekendA) {
     badges.push(
-      `<span class="badge warn">${t("badgeWeekend", "Weekend in {city}", { city: sideA.city })}</span>`
+      `<span class="badge warn">${t("badgeWeekend", "Weekend in {city}", { city: dispCity(sideA.city, sideA.country) })}</span>`
     );
   }
   if (flags.weekendB) {
     badges.push(
-      `<span class="badge warn">${t("badgeWeekend", "Weekend in {city}", { city: sideB.city })}</span>`
+      `<span class="badge warn">${t("badgeWeekend", "Weekend in {city}", { city: dispCity(sideB.city, sideB.country) })}</span>`
     );
   }
   const pen =
@@ -186,12 +199,12 @@ function renderSlot(slot, compromise) {
     <div class="slot ${compromise ? "compromise" : ""}">
       <div class="slot-title">${t("slotTitleBoth", "Both locations (same moment)")}</div>
       <div class="slot-side">
-        <div class="slot-loc"><strong>${escapeHtml(sideA.city)}</strong> (${escapeHtml(sideA.country)})</div>
+        <div class="slot-loc"><strong>${escapeHtml(dispCity(sideA.city, sideA.country))}</strong> (${escapeHtml(dispCc(sideA.country))})</div>
         ${formatSideTimes(sideA)}
         <div class="slot-tz"><code>${escapeHtml(sideA.timezone)}</code></div>
       </div>
       <div class="slot-side">
-        <div class="slot-loc"><strong>${escapeHtml(sideB.city)}</strong> (${escapeHtml(sideB.country)})</div>
+        <div class="slot-loc"><strong>${escapeHtml(dispCity(sideB.city, sideB.country))}</strong> (${escapeHtml(dispCc(sideB.country))})</div>
         ${formatSideTimes(sideB)}
         <div class="slot-tz"><code>${escapeHtml(sideB.timezone)}</code></div>
       </div>

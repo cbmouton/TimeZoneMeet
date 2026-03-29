@@ -13,6 +13,14 @@ const hasMainLookup =
   lookupBtn &&
   clearBtn;
 
+function dispCity(name, cc) {
+  return window.TZMLocale ? window.TZMLocale.formatCity(name, cc) : name;
+}
+
+function dispCountry(cc) {
+  return window.TZMLocale ? window.TZMLocale.formatCountry(cc) : cc;
+}
+
 let selected = null; // { name, country }
 
 function showSuggestions(items) {
@@ -26,7 +34,7 @@ function showSuggestions(items) {
     .map(
       (s, idx) =>
         `<div class="item" data-idx="${idx}">
-          <div>${escapeHtml(s.name)} <small>${escapeHtml(s.country)}</small></div>
+          <div>${escapeHtml(dispCity(s.name, s.country))} <small>${escapeHtml(dispCountry(s.country))}</small></div>
         </div>`
     )
     .join("");
@@ -38,7 +46,7 @@ function showSuggestions(items) {
       const idx = Number(el.getAttribute("data-idx"));
       const choice = items[idx];
       selected = { name: choice.name, country: choice.country };
-      input.value = `${choice.name}`;
+      input.value = dispCity(choice.name, choice.country);
       hideSuggestions();
       lookup();
     });
@@ -85,10 +93,14 @@ async function lookup() {
   resultDiv.textContent = window.tzT ? window.tzT("loading", "Loading...") : "Loading...";
   metaDiv.textContent = "";
 
-  const payload =
-    selected && selected.name.toLowerCase() === raw.toLowerCase()
-      ? { city: selected.name, country: selected.country }
-      : { city: raw };
+  const useSelected =
+    selected &&
+    (window.TZMLocale
+      ? window.TZMLocale.matchesCityInput(raw, selected)
+      : selected.name.toLowerCase() === raw.toLowerCase());
+  const payload = useSelected
+    ? { city: selected.name, country: selected.country }
+    : { city: raw };
 
   try {
     const base = apiBase();
@@ -107,16 +119,18 @@ async function lookup() {
       return;
     }
 
+    const showCity = dispCity(data.city, data.country);
+    const showCtry = dispCountry(data.country);
     resultDiv.textContent = window.tzT
       ? window.tzT("localTimeResult", "Local time in {city}: {time} ({timezone})", {
-          city: data.city,
+          city: showCity,
           time: data.time,
           timezone: data.timezone,
         })
-      : `Local time in ${data.city}: ${data.time} (${data.timezone})`;
+      : `Local time in ${showCity}: ${data.time} (${data.timezone})`;
     metaDiv.textContent = window.tzT
-      ? window.tzT("matchedLine", "Matched: {city}, {country}", { city: data.city, country: data.country })
-      : `Matched: ${data.city}, ${data.country}`;
+      ? window.tzT("matchedLine", "Matched: {city}, {country}", { city: showCity, country: showCtry })
+      : `Matched: ${showCity}, ${showCtry}`;
   } catch (err) {
     resultDiv.textContent = window.tzT ? window.tzT("requestFailed", "Request failed.") : "Request failed.";
   }
