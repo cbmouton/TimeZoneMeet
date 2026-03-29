@@ -400,6 +400,35 @@ function sanitizeCountry(value) {
   return c.length ? c : undefined;
 }
 
+/**
+ * HH:mm in 24h form for `date` in `timeZone`.
+ * Intl may return "24:00" at local midnight; users expect "00:00".
+ */
+function formatLocalTimeHHMM(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  let h = 0;
+  let m = 0;
+  for (const p of dtf.formatToParts(date)) {
+    if (p.type === "hour") h = Number(p.value);
+    if (p.type === "minute") m = Number(p.value);
+  }
+  if (h === 24) h = 0;
+  if (!Number.isFinite(h) || !Number.isFinite(m)) {
+    return new Date().toLocaleTimeString("en-US", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).replace(/^24:/, "00:");
+  }
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function lookupCityRow(city, country) {
   if (country) {
     const stmt = db.prepare(`
@@ -558,12 +587,7 @@ app.get("/api/timezone", (req, res) => {
     }
 
     const timezone = tzLookup(row.lat, row.lon);
-    const time = new Date().toLocaleTimeString("en-US", {
-      timeZone: timezone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+    const time = formatLocalTimeHHMM(new Date(), timezone);
 
     return res.json({
       city: row.name,
@@ -593,12 +617,7 @@ app.post("/api/timezone", (req, res) => {
     }
 
     const timezone = tzLookup(row.lat, row.lon);
-    const time = new Date().toLocaleTimeString("en-US", {
-      timeZone: timezone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+    const time = formatLocalTimeHHMM(new Date(), timezone);
 
     return res.json({
       city: row.name,
