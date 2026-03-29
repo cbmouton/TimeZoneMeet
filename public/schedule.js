@@ -30,6 +30,10 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+function t(key, fallback, vars) {
+  return window.tzT ? window.tzT(key, fallback, vars) : fallback;
+}
+
 async function fetchSuggestions(q) {
   const base = apiBase();
   const res = await fetch(`${base}/api/suggest?q=${encodeURIComponent(q)}&limit=10`, {
@@ -143,41 +147,44 @@ function formatSideTimes(side) {
   const te = escapeHtml(side.timeEnd);
   const d1 = escapeHtml(side.dateLabel);
   const d2 = escapeHtml(side.dateEndLabel);
+  const loc = t("localClockSuffix", "local");
   if (sameLocalDay) {
-    return `<div class="slot-times">${d1}: <strong>${ts}</strong> → <strong>${te}</strong> local</div>`;
+    const inner = t("slotSameDay", "{d1}: <strong>{ts}</strong> → <strong>{te}</strong> {loc}", { d1, ts, te, loc });
+    return `<div class="slot-times">${inner}</div>`;
   }
-  return (
-    `<div class="slot-times">Start: ${d1} at <strong>${ts}</strong> local</div>` +
-    `<div class="slot-times">End: ${d2} at <strong>${te}</strong> local</div>`
-  );
+  const startInner = t("slotStart", "Start: {d1} at <strong>{ts}</strong> {loc}", { d1, ts, loc });
+  const endInner = t("slotEnd", "End: {d2} at <strong>{te}</strong> {loc}", { d2, te, loc });
+  return `<div class="slot-times">${startInner}</div>` + `<div class="slot-times">${endInner}</div>`;
 }
 
 function renderSlot(slot, compromise) {
   const { sideA, sideB, flags } = slot;
   const badges = [];
   if (flags.differentCalendarDay) {
-    badges.push(`<span class="badge info">Different calendar day between locations</span>`);
+    badges.push(`<span class="badge info">${t("badgeDifferentDay", "Different calendar day between locations")}</span>`);
   }
   if (flags.weekendA) {
     badges.push(
-      `<span class="badge warn">Weekend in ${escapeHtml(sideA.city)}</span>`
+      `<span class="badge warn">${t("badgeWeekend", "Weekend in {city}", { city: sideA.city })}</span>`
     );
   }
   if (flags.weekendB) {
     badges.push(
-      `<span class="badge warn">Weekend in ${escapeHtml(sideB.city)}</span>`
+      `<span class="badge warn">${t("badgeWeekend", "Weekend in {city}", { city: sideB.city })}</span>`
     );
   }
   const pen =
     compromise && typeof slot.penalty === "number"
-      ? `<div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">Approx. distance from preferred hours (lower is better): ${escapeHtml(
-          String(slot.penalty)
+      ? `<div class="muted" style="margin-top:0.35rem;font-size:0.85rem;">${t(
+          "penaltyLine",
+          "Approx. distance from preferred hours (lower is better): {value}",
+          { value: String(slot.penalty) }
         )}</div>`
       : "";
 
   return `
     <div class="slot ${compromise ? "compromise" : ""}">
-      <div class="slot-title">Both locations (same moment)</div>
+      <div class="slot-title">${t("slotTitleBoth", "Both locations (same moment)")}</div>
       <div class="slot-side">
         <div class="slot-loc"><strong>${escapeHtml(sideA.city)}</strong> (${escapeHtml(sideA.country)})</div>
         ${formatSideTimes(sideA)}
@@ -201,12 +208,12 @@ scheduleBtn.addEventListener("click", async () => {
   const pb = payloadForCity(cityInputB, selectedB);
   if (!pa || !pb) {
     scheduleResults.innerHTML =
-      '<span class="muted">Enter and confirm two cities (pick a suggestion when offered).</span>';
+      '<span class="muted">' + t("enterTwoCities", "Enter and confirm two cities (pick a suggestion when offered).") + "</span>";
     return;
   }
 
   scheduleBtn.disabled = true;
-  scheduleResults.innerHTML = "Finding times…";
+  scheduleResults.innerHTML = t("findingTimes", "Finding times…");
 
   try {
     const base = apiBase();
@@ -223,39 +230,53 @@ scheduleBtn.addEventListener("click", async () => {
     });
     const data = await res.json();
     if (!res.ok) {
-      scheduleResults.innerHTML = `<span class="muted">Error: ${escapeHtml(data.error || res.statusText)}</span>`;
+      const errRaw = data.error || res.statusText;
+      scheduleResults.innerHTML =
+        '<span class="muted">' +
+        t("errorWithDetail", "Error: {detail}", { detail: escapeHtml(errRaw) }) +
+        "</span>";
       return;
     }
 
     const horizon = Number(data.horizonDays) || 5;
+    const daysWord = horizon === 1 ? t("daySingular", "day") : t("dayPlural", "days");
     const parts = [
-      `<p class="muted slot-intro">Same moment shown as <strong>local start → local end</strong> in each place. Search window: <strong>${horizon} day${horizon === 1 ? "" : "s"}</strong>.</p>`,
+      `<p class="muted slot-intro">${t("slotIntroHtml", "Same moment shown as <strong>local start → local end</strong> in each place. Search window: <strong>{horizon} {daysWord}</strong>.", {
+        horizon: String(horizon),
+        daysWord,
+      })}</p>`,
     ];
     if (data.perfect && data.perfect.length) {
       parts.push(
-        `<h2 class="section-title">Good fit — neither side before 5am or after 8pm local (whole meeting)</h2>` +
-          data.perfect.map((s) => renderSlot(s, false)).join("")
+        `<h2 class="section-title">${t(
+          "sectionGoodFit",
+          "Good fit — neither side before 5am or after 8pm local (whole meeting)"
+        )}</h2>` + data.perfect.map((s) => renderSlot(s, false)).join("")
       );
     } else {
       parts.push(
-        `<p class="muted">No slot in the next ${horizon} day${horizon === 1 ? "" : "s"} keeps both places off the call before 5am or after 8pm local for the full length. Try another duration or cities—or see the closest options below.</p>`
+        `<p class="muted">${t(
+          "sectionNoPerfect",
+          "No slot in the next {horizon} {daysWord} keeps both places off the call before 5am or after 8pm local for the full length. Try another duration or cities—or see the closest options below.",
+          { horizon: String(horizon), daysWord }
+        )}</p>`
       );
     }
 
     if (data.compromise && data.compromise.length) {
       parts.push(
-        `<h2 class="section-title">Closest alternatives (may be early or late locally)</h2>` +
+        `<h2 class="section-title">${t("sectionCompromise", "Closest alternatives (may be early or late locally)")}</h2>` +
           data.compromise.map((s) => renderSlot(s, true)).join("")
       );
     }
 
     if (!parts.length) {
-      scheduleResults.innerHTML = '<span class="muted">No results.</span>';
+      scheduleResults.innerHTML = '<span class="muted">' + t("noResults", "No results.") + "</span>";
     } else {
       scheduleResults.innerHTML = parts.join("");
     }
   } catch {
-    scheduleResults.innerHTML = '<span class="muted">Request failed.</span>';
+    scheduleResults.innerHTML = '<span class="muted">' + t("requestFailed", "Request failed.") + "</span>";
   } finally {
     scheduleBtn.disabled = false;
   }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -9,28 +9,28 @@
   <meta name="format-detection" content="telephone=no" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="author" content="TimeZoneMeet" />
-  <meta name="keywords" content="timezone,city time,world clock,local time,time zone finder,time converter" />
+  <meta name="keywords" content="zona horaria,hora local,reloj mundial,huso horario,convertidor horario" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>TimeZoneMeet - Find City Time Zones and Local Time</title>
-  <meta name="description" content="Find the current local time and time zone for cities worldwide. Fast city lookup, premium ad-free mode, and simple timezone checks." />
+  <title>TimeZoneMeet — Hora local y zona horaria por ciudad</title>
+  <meta name="description" content="Consulta la hora local y la zona horaria de ciudades en todo el mundo. Búsqueda rápida, modo premium sin anuncios y comprobaciones sencillas." />
   <meta name="robots" content="index,follow" />
-  <link rel="canonical" href="https://timezonemeet.app/" />
+  <link rel="canonical" href="https://timezonemeet.app/es/" />
   <link rel="alternate" hreflang="en" href="https://timezonemeet.app/" />
   <link rel="alternate" hreflang="es" href="https://timezonemeet.app/es/" />
   <link rel="alternate" hreflang="x-default" href="https://timezonemeet.app/" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="TimeZoneMeet - Find City Time Zones and Local Time" />
-  <meta property="og:description" content="Find the current local time and time zone for cities worldwide." />
-  <meta property="og:url" content="https://timezonemeet.app/" />
+  <meta property="og:title" content="TimeZoneMeet — Hora local y zona horaria por ciudad" />
+  <meta property="og:description" content="Consulta la hora local y la zona horaria de ciudades en todo el mundo." />
+  <meta property="og:url" content="https://timezonemeet.app/es/" />
   <meta property="og:site_name" content="TimeZoneMeet" />
-  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale" content="es_ES" />
   <meta property="og:image" content="https://timezonemeet.app/icon-512.png" />
-  <meta property="og:image:alt" content="TimeZoneMeet logo" />
+  <meta property="og:image:alt" content="Logotipo de TimeZoneMeet" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@timezonemeet" />
-  <meta name="twitter:title" content="TimeZoneMeet - Find City Time Zones and Local Time" />
-  <meta name="twitter:description" content="Find the current local time and time zone for cities worldwide." />
+  <meta name="twitter:title" content="TimeZoneMeet — Hora local y zona horaria por ciudad" />
+  <meta name="twitter:description" content="Consulta la hora local y la zona horaria de ciudades en todo el mundo." />
   <meta name="twitter:image" content="https://timezonemeet.app/icon-512.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -40,10 +40,11 @@
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "TimeZoneMeet",
-      "url": "https://timezonemeet.app/",
+      "url": "https://timezonemeet.app/es/",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Web",
-      "description": "Find local time and timezone information for cities worldwide.",
+      "inLanguage": "es",
+      "description": "Consulta la hora local y la zona horaria de ciudades en todo el mundo.",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -138,36 +139,36 @@
   <div class="wrap">
     <div class="brand-rail">
       <img src="/icon-192.png" alt="" aria-hidden="true" />
-      <h1 aria-label="Find City Timezone">Find City Timezone</h1>
+      <h1 aria-label="Buscar zona horaria de una ciudad">Hora local por ciudad</h1>
       <img src="/icon-192.png" alt="" aria-hidden="true" />
     </div>
 
     <p class="intro">
-      Enter a city (and optionally a country) to instantly see the current local time and time zone.
+      Escribe una ciudad (y, si quieres, un país) para ver al instante la hora local y la zona horaria.
     </p>
     <p class="hint">
-      No account needed. Your input is used only to perform the lookup on our servers.
+      No hace falta cuenta. Tu texto solo se usa para la consulta en nuestros servidores.
     </p>
     <p class="hint">
-      <a href="schedule.html">Schedule a meeting</a> between two cities without either side calling before 5am or after 8pm local.
+      <a href="/es/schedule.html">Programar una reunión</a> entre dos ciudades sin pedir a ningún lado llamar antes de las 5:00 ni después de las 20:00 hora local.
     </p>
 
     <p class="premium-bar">
-      <button type="button" id="goPremiumBtn">Go Premium</button>
-      <span id="premiumActiveNote">Premium active — ads hidden, up to 50 suggestions.</span>
-      <button type="button" id="premiumSignOutBtn">Sign out premium</button>
+      <button type="button" id="goPremiumBtn">Hazte Premium</button>
+      <span id="premiumActiveNote">Premium activo: sin anuncios, hasta 50 sugerencias.</span>
+      <button type="button" id="premiumSignOutBtn">Cerrar sesión Premium</button>
     </p>
 
     <div class="suggestions">
-      <input type="text" id="cityInput" placeholder="Type a city name..." autocomplete="off" />
+      <input type="text" id="cityInput" placeholder="Escribe el nombre de una ciudad…" autocomplete="off" />
       <div id="suggestList" class="list" style="display: none;"></div>
     </div>
     <div class="row">
-      <button type="button" id="lookupBtn">Lookup</button>
-      <button type="button" id="clearBtn">Clear</button>
+      <button type="button" id="lookupBtn">Buscar</button>
+      <button type="button" id="clearBtn">Borrar</button>
     </div>
 
-    <div class="ad-slot" aria-label="Advertisement">
+    <div class="ad-slot" aria-label="Publicidad">
       <ins
         class="adsbygoogle"
         style="display:block"
@@ -176,24 +177,24 @@
         data-ad-format="auto"
         data-full-width-responsive="true"
       ></ins>
-      <div class="ad-placeholder" id="adPlaceholder">Sponsored</div>
+      <div class="ad-placeholder" id="adPlaceholder">Patrocinado</div>
     </div>
 
-    <div id="result" class="muted">Enter a city and press Lookup.</div>
-    <div id="meta" class="muted">Example: Paris, FR</div>
+    <div id="result" class="muted">Escribe una ciudad y pulsa Buscar.</div>
+    <div id="meta" class="muted">Ejemplo: París, FR</div>
 
     <footer class="site-footer">
-      <a href="privacy.html">Privacy Policy</a>
-      · <a href="about.html">About</a>
-      · <a href="faq.html">FAQ</a>
-      · <a href="blog.html">Blog</a>
-      · <a href="schedule.html">Schedule</a>
-      · <a href="signin.html">Sign in</a>
-      · <a href="/es/">Español</a>
+      <a href="/es/privacy.html">Privacidad</a>
+      · <a href="/es/about.html">Acerca de</a>
+      · <a href="/es/faq.html">FAQ</a>
+      · <a href="/blog.html">Blog</a>
+      · <a href="/es/schedule.html">Programar</a>
+      · <a href="/signin.html">Iniciar sesión</a>
+      · <a href="/">English</a>
       · TimeZoneMeet
     </footer>
   </div>
-  <script src="config.js"></script>
+  <script src="/config.js"></script>
   <script>
     (function () {
       var c = window.__ADSENSE_CLIENT__ || "";
@@ -208,12 +209,13 @@
       }
     })();
   </script>
-  <script src="consent.js"></script>
-  <script src="apiBase.js"></script>
-  <script src="iap.js"></script>
-  <script src="ads.js"></script>
-  <script src="premium-sync.js"></script>
+  <script src="/consent.js"></script>
+  <script src="/apiBase.js"></script>
+  <script src="/iap.js"></script>
+  <script src="/ads.js"></script>
+  <script src="/premium-sync.js"></script>
+  <script src="/locales/es.js"></script>
   <script src="/i18n.js"></script>
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

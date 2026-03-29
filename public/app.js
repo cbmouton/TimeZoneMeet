@@ -82,7 +82,7 @@ async function lookup() {
   const raw = input.value.trim();
   if (!raw) return;
 
-  resultDiv.textContent = "Loading...";
+  resultDiv.textContent = window.tzT ? window.tzT("loading", "Loading...") : "Loading...";
   metaDiv.textContent = "";
 
   const payload =
@@ -101,14 +101,24 @@ async function lookup() {
     const data = await response.json();
 
     if (data.error) {
-      resultDiv.textContent = `Error: ${data.error}`;
+      resultDiv.textContent = window.tzT
+        ? window.tzT("errorWithDetail", "Error: {detail}", { detail: data.error })
+        : `Error: ${data.error}`;
       return;
     }
 
-    resultDiv.textContent = `Local time in ${data.city}: ${data.time} (${data.timezone})`;
-    metaDiv.textContent = `Matched: ${data.city}, ${data.country}`;
+    resultDiv.textContent = window.tzT
+      ? window.tzT("localTimeResult", "Local time in {city}: {time} ({timezone})", {
+          city: data.city,
+          time: data.time,
+          timezone: data.timezone,
+        })
+      : `Local time in ${data.city}: ${data.time} (${data.timezone})`;
+    metaDiv.textContent = window.tzT
+      ? window.tzT("matchedLine", "Matched: {city}, {country}", { city: data.city, country: data.country })
+      : `Matched: ${data.city}, ${data.country}`;
   } catch (err) {
-    resultDiv.textContent = "Request failed.";
+    resultDiv.textContent = window.tzT ? window.tzT("requestFailed", "Request failed.") : "Request failed.";
   }
 }
 
@@ -173,7 +183,12 @@ if (goPremiumBtn) {
         await window.TZM.iap.purchase();
       } catch {
         alert(
-          "Could not start Apple purchase flow. Make sure you set a StoreKit Configuration file in the scheme (for Simulator), or create the product in App Store Connect."
+          window.tzT
+            ? window.tzT(
+                "alertIOSPurchase",
+                "Could not start Apple purchase flow. Make sure you set a StoreKit Configuration file in the scheme (for Simulator), or create the product in App Store Connect."
+              )
+            : "Could not start Apple purchase flow. Make sure you set a StoreKit Configuration file in the scheme (for Simulator), or create the product in App Store Connect."
         );
       }
       return;
@@ -193,7 +208,13 @@ if (goPremiumBtn) {
         data = JSON.parse(raw);
       } catch {
         alert(
-          `Checkout failed (HTTP ${res.status}). The server did not return JSON — wrong API URL, a bad deploy, or an edge/proxy error page. Check GET /health (checkout.ready) and Railway logs.`
+          window.tzT
+            ? window.tzT(
+                "alertCheckoutJson",
+                "Checkout failed (HTTP {status}). The server did not return JSON — wrong API URL, a bad deploy, or an edge/proxy error page. Check GET /health (checkout.ready) and Railway logs.",
+                { status: String(res.status) }
+              )
+            : `Checkout failed (HTTP ${res.status}). The server did not return JSON — wrong API URL, a bad deploy, or an edge/proxy error page. Check GET /health (checkout.ready) and Railway logs.`
         );
         return;
       }
@@ -202,10 +223,21 @@ if (goPremiumBtn) {
         return;
       }
       const msg = [data.error, data.detail].filter(Boolean).join(" — ");
-      alert(msg || "Premium checkout is not configured on the server.");
+      alert(
+        msg ||
+          (window.tzT
+            ? window.tzT("alertPremiumNotConfigured", "Premium checkout is not configured on the server.")
+            : "Premium checkout is not configured on the server.")
+      );
     } catch (e) {
       alert(
-        `Network error calling ${url}. If the site is on Railway, check that __API_BASE__ in config.js is "" (same host) or your full https:// URL.`
+        window.tzT
+          ? window.tzT(
+              "alertNetworkPremium",
+              'Network error calling {url}. If the site is on Railway, check that __API_BASE__ in config.js is "" (same host) or your full https:// URL.',
+              { url: url }
+            )
+          : `Network error calling ${url}. If the site is on Railway, check that __API_BASE__ in config.js is "" (same host) or your full https:// URL.`
       );
     }
   });
@@ -219,9 +251,18 @@ if (premiumSignOutBtn) {
     if (isIOS && window.TZM?.iap?.enabled?.()) {
       try {
         window.TZM.iap.restore();
-        alert("Restoring purchases… If you previously bought Premium, it will re-enable shortly.");
+        alert(
+          window.tzT
+            ? window.tzT(
+                "alertRestore",
+                "Restoring purchases… If you previously bought Premium, it will re-enable shortly."
+              )
+            : "Restoring purchases… If you previously bought Premium, it will re-enable shortly."
+        );
       } catch {
-        alert("Restore purchases failed.");
+        alert(
+          window.tzT ? window.tzT("alertRestoreFailed", "Restore purchases failed.") : "Restore purchases failed."
+        );
       }
       return;
     }

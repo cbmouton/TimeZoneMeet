@@ -4,6 +4,21 @@
     <loc>https://timezonemeet.app/</loc>
   </url>
   <url>
+    <loc>https://timezonemeet.app/es/</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/es/schedule.html</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/es/faq.html</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/es/about.html</loc>
+  </url>
+  <url>
+    <loc>https://timezonemeet.app/es/privacy.html</loc>
+  </url>
+  <url>
     <loc>https://timezonemeet.app/privacy.html</loc>
   </url>
   <url>
@@ -28,4 +43,3 @@
     <loc>https://timezonemeet.app/blog/scheduling-meetings-across-time-zones.html</loc>
   </url>
 </urlset>
-

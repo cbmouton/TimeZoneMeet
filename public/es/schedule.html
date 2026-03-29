@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -8,27 +8,27 @@
   <meta name="apple-mobile-web-app-title" content="TimeZoneMeet" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="author" content="TimeZoneMeet" />
-  <meta name="keywords" content="schedule meeting time zones,find meeting time two cities,international call scheduler,timezone meeting planner,cross timezone meeting" />
+  <meta name="keywords" content="reunión zonas horarias,horario dos ciudades,planificador reuniones internacionales" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Schedule a meeting across time zones — TimeZoneMeet</title>
-  <meta name="description" content="Free meeting-time finder: pick two cities and a duration. TimeZoneMeet suggests slots in the next five days so neither side is on a call before 5am or after 8pm local—from start to end." />
+  <title>Programar una reunión entre zonas horarias — TimeZoneMeet</title>
+  <meta name="description" content="Elige dos ciudades y una duración. TimeZoneMeet propone huecos en los próximos cinco días para que ningún lado esté en llamada antes de las 5:00 ni después de las 20:00 hora local, de principio a fin." />
   <meta name="robots" content="index,follow" />
-  <link rel="canonical" href="https://timezonemeet.app/schedule.html" />
+  <link rel="canonical" href="https://timezonemeet.app/es/schedule.html" />
   <link rel="alternate" hreflang="en" href="https://timezonemeet.app/schedule.html" />
   <link rel="alternate" hreflang="es" href="https://timezonemeet.app/es/schedule.html" />
   <link rel="alternate" hreflang="x-default" href="https://timezonemeet.app/schedule.html" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Schedule a meeting across time zones — TimeZoneMeet" />
-  <meta property="og:description" content="Pick two cities; get suggested call times in both local clocks, avoiding very early and very late hours for the whole meeting." />
-  <meta property="og:url" content="https://timezonemeet.app/schedule.html" />
+  <meta property="og:title" content="Programar una reunión entre zonas horarias — TimeZoneMeet" />
+  <meta property="og:description" content="Dos ciudades; horarios sugeridos con inicio y fin local en cada lugar, evitando horas muy tempranas o tardías." />
+  <meta property="og:url" content="https://timezonemeet.app/es/schedule.html" />
   <meta property="og:site_name" content="TimeZoneMeet" />
-  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale" content="es_ES" />
   <meta property="og:image" content="https://timezonemeet.app/icon-512.png" />
-  <meta property="og:image:alt" content="TimeZoneMeet logo" />
+  <meta property="og:image:alt" content="Logotipo de TimeZoneMeet" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@timezonemeet" />
-  <meta name="twitter:title" content="Schedule a meeting across time zones — TimeZoneMeet" />
-  <meta name="twitter:description" content="Two cities, one meeting: suggested times with local start and end in each place." />
+  <meta name="twitter:title" content="Programar una reunión entre zonas horarias — TimeZoneMeet" />
+  <meta name="twitter:description" content="Dos ciudades, una reunión: horarios sugeridos con inicio y fin en cada lugar." />
   <meta name="twitter:image" content="https://timezonemeet.app/icon-512.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -37,9 +37,10 @@
     {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      "name": "Schedule a meeting across time zones",
-      "url": "https://timezonemeet.app/schedule.html",
-      "description": "Pick two cities and a meeting length; get suggested times in each location's local clock, avoiding calls before 5am or after 8pm local for the full duration.",
+      "name": "Programar una reunión entre zonas horarias",
+      "inLanguage": "es",
+      "url": "https://timezonemeet.app/es/schedule.html",
+      "description": "Elige dos ciudades y una duración; obtén horarios sugeridos en el reloj local de cada lugar, evitando llamadas antes de las 5:00 o después de las 20:00 hora local durante toda la reunión.",
       "isPartOf": {
         "@type": "WebSite",
         "name": "TimeZoneMeet",
@@ -52,8 +53,8 @@
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "TimeZoneMeet", "item": "https://timezonemeet.app/" },
-        { "@type": "ListItem", "position": 2, "name": "Schedule", "item": "https://timezonemeet.app/schedule.html" }
+        { "@type": "ListItem", "position": 1, "name": "TimeZoneMeet", "item": "https://timezonemeet.app/es/" },
+        { "@type": "ListItem", "position": 2, "name": "Programar", "item": "https://timezonemeet.app/es/schedule.html" }
       ]
     }
   </script>
@@ -196,39 +197,39 @@
 </head>
 <body>
   <div class="wrap">
-    <p><a href="/">← Home</a></p>
+    <p><a href="/es/">← Inicio</a></p>
     <div class="brand-rail">
       <img src="/icon-192.png" alt="" aria-hidden="true" />
-      <h1>Schedule across time zones</h1>
+      <h1>Reuniones entre zonas horarias</h1>
       <img src="/icon-192.png" alt="" aria-hidden="true" />
     </div>
 
     <p class="premium-bar">
-      <button type="button" id="goPremiumBtn">Go Premium</button>
-      <span id="premiumActiveNote">Premium active — ads hidden.</span>
-      <button type="button" id="premiumSignOutBtn">Sign out premium</button>
+      <button type="button" id="goPremiumBtn">Hazte Premium</button>
+      <span id="premiumActiveNote">Premium activo: sin anuncios.</span>
+      <button type="button" id="premiumSignOutBtn">Cerrar sesión Premium</button>
     </p>
 
     <p class="intro">
-      Pick two cities and how long you need. We search the <strong>next five days</strong> and suggest slots where
-      <strong>neither place</strong> is asked to meet <strong>before 5:00 AM</strong> or <strong>after 8:00 PM</strong>
-      <strong>local time</strong>—from the moment the call starts until it ends.
+      Elige dos ciudades y cuánto tiempo necesitas. Buscamos en los <strong>próximos cinco días</strong> y sugerimos huecos en los que
+      <strong>ningún lado</strong> deba estar en llamada <strong>antes de las 5:00</strong> ni <strong>después de las 20:00</strong>
+      <strong>hora local</strong>, desde el inicio hasta el fin de la reunión.
     </p>
 
-    <label for="cityInputA">First location</label>
+    <label for="cityInputA">Primera ubicación</label>
     <div class="suggestions">
-      <input type="text" id="cityInputA" placeholder="City name…" autocomplete="off" />
+      <input type="text" id="cityInputA" placeholder="Nombre de la ciudad…" autocomplete="off" />
       <div id="suggestListA" class="list" style="display: none;"></div>
     </div>
 
-    <label for="cityInputB">Second location</label>
+    <label for="cityInputB">Segunda ubicación</label>
     <div class="suggestions">
-      <input type="text" id="cityInputB" placeholder="City name…" autocomplete="off" />
+      <input type="text" id="cityInputB" placeholder="Nombre de la ciudad…" autocomplete="off" />
       <div id="suggestListB" class="list" style="display: none;"></div>
     </div>
 
-    <div class="dur-row" role="group" aria-label="Meeting length">
-      <span>Length</span>
+    <div class="dur-row" role="group" aria-label="Duración de la reunión">
+      <span>Duración</span>
       <button type="button" class="dur-btn" data-dur="30">30 min</button>
       <button type="button" class="dur-btn" data-dur="45">45 min</button>
       <button type="button" class="dur-btn active" data-dur="60">60 min</button>
@@ -236,14 +237,14 @@
     </div>
 
     <div class="row-actions">
-      <button type="button" id="scheduleBtn">Suggest times</button>
+      <button type="button" id="scheduleBtn">Sugerir horarios</button>
     </div>
 
     <p class="hint">
-      If nothing avoids late or early hours for both sides, we still show the nearest options. We flag weekends when Saturday or Sunday applies locally to either city.
+      Si no hay huecos que eviten horas muy tardías o tempranas para ambos, mostramos las opciones más cercanas. Marcamos fines de semana cuando sábado o domingo aplican en hora local a cualquiera de las dos ciudades.
     </p>
 
-    <div class="ad-slot" aria-label="Advertisement">
+    <div class="ad-slot" aria-label="Publicidad">
       <ins
         class="adsbygoogle"
         style="display:block"
@@ -252,20 +253,20 @@
         data-ad-format="auto"
         data-full-width-responsive="true"
       ></ins>
-      <div class="ad-placeholder" id="adPlaceholder">Sponsored</div>
+      <div class="ad-placeholder" id="adPlaceholder">Patrocinado</div>
     </div>
 
     <div id="scheduleResults" class="muted" aria-live="polite"></div>
 
     <footer class="site-footer">
-      <a href="/privacy.html">Privacy Policy</a>
-      · <a href="/about.html">About</a>
-      · <a href="/faq.html">FAQ</a>
+      <a href="/es/privacy.html">Privacidad</a>
+      · <a href="/es/about.html">Acerca de</a>
+      · <a href="/es/faq.html">FAQ</a>
       · <a href="/blog.html">Blog</a>
-      · <a href="/schedule.html">Schedule</a>
-      · <a href="/signin.html">Sign in</a>
-      · <a href="/es/schedule.html">Español</a>
-      · <a href="/">TimeZoneMeet</a>
+      · <a href="/es/schedule.html">Programar</a>
+      · <a href="/signin.html">Iniciar sesión</a>
+      · <a href="/schedule.html">English</a>
+      · <a href="/es/">TimeZoneMeet</a>
     </footer>
   </div>
   <script src="/config.js"></script>
@@ -288,6 +289,7 @@
   <script src="/iap.js"></script>
   <script src="/ads.js"></script>
   <script src="/premium-sync.js"></script>
+  <script src="/locales/es.js"></script>
   <script src="/i18n.js"></script>
   <script src="/app.js"></script>
   <script src="/schedule.js"></script>
