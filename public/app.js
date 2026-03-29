@@ -21,6 +21,18 @@ function dispCountry(cc) {
   return window.TZMLocale ? window.TZMLocale.formatCountry(cc) : cc;
 }
 
+function isEsPage() {
+  return (
+    typeof document !== "undefined" &&
+    (document.documentElement.getAttribute("lang") || "").toLowerCase().startsWith("es")
+  );
+}
+
+/** When __TZM_I18N__ is missing, tzT uses this; Spanish on /es/ pages. */
+function tzFallback(en, es) {
+  return isEsPage() ? es : en;
+}
+
 let selected = null; // { name, country }
 
 function showSuggestions(items) {
@@ -93,7 +105,9 @@ async function lookup() {
   const raw = input.value.trim();
   if (!raw) return;
 
-  resultDiv.textContent = window.tzT ? window.tzT("loading", "Loading...") : "Loading...";
+  resultDiv.textContent = window.tzT
+    ? window.tzT("loading", tzFallback("Loading...", "Cargando…"))
+    : tzFallback("Loading...", "Cargando…");
   metaDiv.textContent = "";
 
   const useSelected =
@@ -121,7 +135,7 @@ async function lookup() {
 
     if (data.error) {
       resultDiv.textContent = window.tzT
-        ? window.tzT("errorWithDetail", "Error: {detail}", { detail: data.error })
+        ? window.tzT("errorWithDetail", tzFallback("Error: {detail}", "Error: {detail}"), { detail: data.error })
         : `Error: ${data.error}`;
       return;
     }
@@ -129,17 +143,34 @@ async function lookup() {
     const showCity = dispCity(data.city, data.country);
     const showCtry = dispCountry(data.country);
     resultDiv.textContent = window.tzT
-      ? window.tzT("localTimeResult", "Local time in {city}: {time} ({timezone})", {
-          city: showCity,
-          time: data.time,
-          timezone: data.timezone,
-        })
-      : `Local time in ${showCity}: ${data.time} (${data.timezone})`;
+      ? window.tzT(
+          "localTimeResult",
+          tzFallback(
+            "Local time in {city}: {time} ({timezone})",
+            "Hora local en {city}: {time} ({timezone})"
+          ),
+          {
+            city: showCity,
+            time: data.time,
+            timezone: data.timezone,
+          }
+        )
+      : isEsPage()
+        ? `Hora local en ${showCity}: ${data.time} (${data.timezone})`
+        : `Local time in ${showCity}: ${data.time} (${data.timezone})`;
     metaDiv.textContent = window.tzT
-      ? window.tzT("matchedLine", "Matched: {city}, {country}", { city: showCity, country: showCtry })
-      : `Matched: ${showCity}, ${showCtry}`;
+      ? window.tzT(
+          "matchedLine",
+          tzFallback("Matched: {city}, {country}", "Coincidencia: {city}, {country}"),
+          { city: showCity, country: showCtry }
+        )
+      : isEsPage()
+        ? `Coincidencia: ${showCity}, ${showCtry}`
+        : `Matched: ${showCity}, ${showCtry}`;
   } catch (err) {
-    resultDiv.textContent = window.tzT ? window.tzT("requestFailed", "Request failed.") : "Request failed.";
+    resultDiv.textContent = window.tzT
+      ? window.tzT("requestFailed", tzFallback("Request failed.", "La solicitud falló."))
+      : tzFallback("Request failed.", "La solicitud falló.");
   }
 }
 
