@@ -17,6 +17,43 @@
 
   const cityMap = window.__TZM_CITY_DISPLAY_ES__ || {};
 
+  /** Lowercase + strip accents so "bogota" matches "Bogotá" Spanish keys. */
+  function fold(s) {
+    return String(s)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  let searchPairsCache = null;
+  function getSpanishSearchPairs() {
+    if (searchPairsCache) return searchPairsCache;
+    searchPairsCache = Object.entries(cityMap)
+      .map(([k, v]) => ({ es: fold(v), en: k.split("|")[0] }))
+      .filter((p) => p.es.length > 0)
+      .sort((a, b) => b.es.length - a.es.length);
+    return searchPairsCache;
+  }
+
+  /**
+   * Map Spanish search text (e.g. "nueva york") to GeoNames English ("New York") for /api/suggest and lookup.
+   * Longest Spanish phrase matched first (prefix), so "nueva" resolves to New York before shorter keys.
+   */
+  function resolveSpanishSuggestQuery(q) {
+    if (lang !== "es" || !q || typeof q !== "string") return q;
+    const ql = fold(q.trim());
+    if (!ql) return q;
+    const pairs = getSpanishSearchPairs();
+    for (let i = 0; i < pairs.length; i++) {
+      if (pairs[i].es === ql) return pairs[i].en;
+    }
+    if (ql.length < 2) return q;
+    for (let i = 0; i < pairs.length; i++) {
+      if (pairs[i].es.startsWith(ql)) return pairs[i].en;
+    }
+    return q;
+  }
+
   function formatCountry(code) {
     if (!code || typeof code !== "string") return code || "";
     const c = code.trim().toUpperCase();
@@ -41,16 +78,17 @@
     if (!selected || typeof raw !== "string") return false;
     const t = raw.trim();
     if (!t) return false;
-    const low = t.toLowerCase();
-    if (selected.name.toLowerCase() === low) return true;
+    if (fold(selected.name) === fold(t)) return true;
     const disp = formatCity(selected.name, selected.country);
-    return disp.toLowerCase() === low;
+    return fold(disp) === fold(t);
   }
 
   window.TZMLocale = {
     formatCountry,
     formatCity,
     matchesCityInput,
+    resolveSpanishSuggestQuery,
+    resolveSpanishCityName: resolveSpanishSuggestQuery,
     lang,
   };
 })();

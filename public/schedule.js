@@ -44,7 +44,10 @@ function t(key, fallback, vars) {
 
 async function fetchSuggestions(q) {
   const base = apiBase();
-  const res = await fetch(`${base}/api/suggest?q=${encodeURIComponent(q)}&limit=10`, {
+  const qq = window.TZMLocale?.resolveSpanishSuggestQuery
+    ? window.TZMLocale.resolveSpanishSuggestQuery(q)
+    : q;
+  const res = await fetch(`${base}/api/suggest?q=${encodeURIComponent(qq)}&limit=10`, {
     headers: fetchHeaders(false),
   });
   return res.json();
@@ -151,7 +154,11 @@ function payloadForCity(input, selected) {
   if (useSelected) {
     return { city: selected.name, country: selected.country };
   }
-  return { city: raw };
+  return {
+    city: window.TZMLocale?.resolveSpanishCityName
+      ? window.TZMLocale.resolveSpanishCityName(raw)
+      : raw,
+  };
 }
 
 function formatSideTimes(side) {

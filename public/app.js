@@ -81,7 +81,10 @@ function fetchHeaders(isJson) {
 
 async function fetchSuggestions(q) {
   const base = apiBase();
-  const url = `${base}/api/suggest?q=${encodeURIComponent(q)}&limit=10`;
+  const qq = window.TZMLocale?.resolveSpanishSuggestQuery
+    ? window.TZMLocale.resolveSpanishSuggestQuery(q)
+    : q;
+  const url = `${base}/api/suggest?q=${encodeURIComponent(qq)}&limit=10`;
   const res = await fetch(url, { headers: fetchHeaders(false) });
   return await res.json();
 }
@@ -100,7 +103,11 @@ async function lookup() {
       : selected.name.toLowerCase() === raw.toLowerCase());
   const payload = useSelected
     ? { city: selected.name, country: selected.country }
-    : { city: raw };
+    : {
+        city: window.TZMLocale?.resolveSpanishCityName
+          ? window.TZMLocale.resolveSpanishCityName(raw)
+          : raw,
+      };
 
   try {
     const base = apiBase();
